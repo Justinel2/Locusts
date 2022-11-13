@@ -5,6 +5,7 @@ const server = require("http").createServer(app);
 require("dotenv").config();
 const mongoose = require("mongoose");
 const request = require('request');
+const Item = require("./classes/Item");
 
 let bodyParser = require('body-parser');
 app.use(bodyParser.json()); // support json encoded bodies
@@ -13,7 +14,9 @@ app.use('/varsToMongo',handleGetVars);
 
 const url = process.env.MONGODB_URI;
 console.log(url);
-const CanadianClimateModel = require("./CanadianWeatherSchema.js");
+const CanadianClimateModel = require("./schemas/CanadianWeatherSchema.js");
+const { resolve } = require("path");
+const { rejects } = require("assert");
 
 //connect to db
 mongoose.connect(url);
@@ -69,24 +72,43 @@ async function  handleGetVars  (request,response,next){
 //   console.log(body.explanation);
 // });
 // console.log(results);
-  getUPCPage(request.query.UPCsubmitted);
+  let item =  await getUPCPage(request.query.UPCsubmitted);
+  // console.log(item);
+  console.log(item.getItemStats());
 }
 
-function getUPCPage (upc) {
-  let product;
-  request.post({
-    uri: 'https://api.upcitemdb.com/prod/trial/lookup',
-    headers: {
-      "Content-Type": "application/json"
-    },
-    gzip: true,
-    body: "{ \"upc\": \""+ upc +"\" }",
-  }, function (err, resp, body) {
-    console.log('server encoded the data as: ' + (resp.headers['content-encoding'] || 'identity'))
-    console.log('the decoded data is: ' + body)
-    product = JSON.parse(body);
-    console.log(product);
-  })
+function getUPCPage (upc) {  
+  return new Promise((resolve,reject)=> {
+    setTimeout(()=>{
+      request.post({
+        uri: 'https://api.upcitemdb.com/prod/trial/lookup',
+        headers: {
+          "Content-Type": "application/json"
+        },
+        gzip: true,
+        body: "{ \"upc\": \""+ upc +"\" }",
+      }, function (err, resp, body) {
+        console.log('server encoded the data as: ' + (resp.headers['content-encoding'] || 'identity'))
+        console.log('the decoded data is: ' + body)
+        let entry = JSON.parse(body);
+        if(entry.code === "INVALID_UPC") {
+          let errorMessage = entry.message;
+          console.log(errorMessage);
+          reject(errorMessage);
+        }
+        else {
+          let productName = entry.items[0].title;
+          let brand = entry.items[0].brand;
+          let imageURL = entry.items[0].images[0];
+          // console.log(productName, brand, imageURL);
+          // let searchedItem = [productName, brand, imageURL];
+          let searchedItem = new Item(productName, brand, imageURL);
+          // console.log(searchedItem);
+          resolve(searchedItem); 
+        }
+      })
+    },2000);
+  }) 
 }
 
 
