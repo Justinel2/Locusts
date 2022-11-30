@@ -1,24 +1,33 @@
+
+//Server Express
 const express = require("express");
 const portNumber = 4200;
 const app = express(); //make an instance of express
 const server = require("http").createServer(app);
-require("dotenv").config();
-const mongoose = require("mongoose");
-const request = require('request');
-const Item = require("./classes/Item");
-
+//+
 let bodyParser = require('body-parser');
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 app.use('/varsToMongo',handleGetVars);
 
+//Node Modules
+// var http = require('follow-redirects').http;
+const request = require('request');
+const Wikiapi = require('wikiapi');
+
+//Classes
+const Item = require("./classes/Item");
+
+//Database 
+require("dotenv").config();
+const mongoose = require("mongoose");
 const url = process.env.MONGODB_URI;
-console.log(url);
+// console.log(url);
 const CanadianClimateModel = require("./schemas/CanadianWeatherSchema.js");
 const { resolve } = require("path");
 const { rejects } = require("assert");
 
-//connect to db
+//---- Connection to db
 mongoose.connect(url);
 let db = mongoose.connection;
 db.once("open", async function(){
@@ -60,6 +69,8 @@ function handlePost(request,response){
 
 //EXAMPLE of  user making a query ... 10
 async function  handleGetVars  (request,response,next){
+  let newSearchedItem = new Item();
+
   console.log(request.url);
   console.log(request.query.UPCsubmitted);
   response.send("SUCCESS GET");
@@ -72,9 +83,13 @@ async function  handleGetVars  (request,response,next){
 //   console.log(body.explanation);
 // });
 // console.log(results);
-  let item =  await getUPCPage(request.query.UPCsubmitted);
+  // let item =  await getUPCPage(request.query.UPCsubmitted);
+  // let company = await getMotherCompany(item.brand);
+  newSearchedItem.motherCo = await getMotherCompany("Gatorade");
+  console.log(newSearchedItem.motherCo);
+  // newSearchedItem.subsidiaries = await getSubsidiaries(newSearchedItem.motherCo);
   // console.log(item);
-  console.log(item.getItemStats());
+  // console.log(item.getItemStats());
 }
 
 function getUPCPage (upc) {  
@@ -88,12 +103,12 @@ function getUPCPage (upc) {
         gzip: true,
         body: "{ \"upc\": \""+ upc +"\" }",
       }, function (err, resp, body) {
-        console.log('server encoded the data as: ' + (resp.headers['content-encoding'] || 'identity'))
-        console.log('the decoded data is: ' + body)
+        // console.log('server encoded the data as: ' + (resp.headers['content-encoding'] || 'identity'))
+        // console.log('the decoded data is: ' + body)
         let entry = JSON.parse(body);
         if(entry.code === "INVALID_UPC") {
           let errorMessage = entry.message;
-          console.log(errorMessage);
+          // console.log(errorMessage);
           reject(errorMessage);
         }
         else {
@@ -102,14 +117,70 @@ function getUPCPage (upc) {
           let imageURL = entry.items[0].images[0];
           // console.log(productName, brand, imageURL);
           // let searchedItem = [productName, brand, imageURL];
-          let searchedItem = new Item(productName, brand, imageURL);
+          // let searchedItem = new Item(productName, brand, imageURL);
+          newSearchedItem.name = productName;
+          newSearchedItem.brand = brand;
+          newSearchedItem.imageURL = imageURL;
           // console.log(searchedItem);
-          resolve(searchedItem); 
+          resolve(newSearchedItem); 
         }
       })
     },2000);
   }) 
 }
 
+function getMotherCompany (brand) {  
+  return new Promise((resolve,reject)=> {
+    setTimeout(async ()=>{
+      const wiki = new Wikiapi('en');
+      const page_data = await wiki.page(brand);
+      const parsed = page_data.parse();
+	    let infobox;
+	    parsed.each('template', template_token => {
+		    if (template_token.name.startsWith('Infobox')) {
+			    infobox = template_token.parameters;
+			  return parsed.each.exit;
+		    }
+        else {
+          // reject();
+        }
+	    });
+	    for (const [key, value] of Object.entries(infobox)){
+        infobox[key] = value.toString();
+      }
+	      // print json of the infobox
+        let owner = infobox.currentowner.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
+        resolve(owner);
+    },2000);
+  }) 
+}
+
+// function getSubsidiaries(company) {
+//   setTimeout(async ()=>{
+//     const wiki = new Wikiapi('en');
+//     const page_data = await wiki.page(company);
+//     const parsed = page_data.parse();
+//     let infobox;
+//     parsed.each('template', template_token => {
+//       if (template_token.name.startsWith('Infobox')) {
+//         infobox = template_token.parameters;
+//       return parsed.each.exit;
+//       }
+//       else {
+//         // reject();
+//       }
+//     });
+//     for (const [key, value] of Object.entries(infobox)){
+//       infobox[key] = value.toString();
+//     }
+//       // print json of the infobox
+//       console.log(infobox);
+//       // let owner = infobox.currentowner.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
+//       if (infobox.subsid != undefined) {
+        
+//       }
+//       resolve(owner);
+//   },2000);
+// }
 
 

@@ -1,15 +1,19 @@
 class Item {
-    constructor(name, brand, imageURL) {
-      this.name = name;
-      this.brand = brand;
-      this.imageURL = imageURL;
+    constructor(name, brand, motherCo, imageURL) {
+      this.name = "";
+      this.brand = "";
+      this.motherCo = "";
+      this.imageURL = "";
+      this.subsidies = [];
     }
   
     getItemStats() {
       return `
         Name: ${this.name}
         Brand: ${this.brand}
+        MotherCo: ${this.motherCo}
         ImageURL: ${this.imageURL}
+        Subsidies: ${this.subsidies}
       `;
     }
   }

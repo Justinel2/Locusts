@@ -13,8 +13,10 @@
     "body-parser": "^1.20.0",
     "dotenv": "^16.0.3",
     "express": "^4.18.1",
+    "follow-redirects": "^1.15.2",
     "mongoose": "^6.7.2",
     "node-static": "^0.7.11",
-    "request": "^2.88.2"
+    "request": "^2.88.2",
+    "wikiapi": "^1.19.4"
   }
 }
