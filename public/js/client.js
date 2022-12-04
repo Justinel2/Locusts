@@ -6,7 +6,7 @@ window.onload = function () {
 
     let searchCrit = document.getElementById("searchCrit").value;
     $.get(
-      "/varsToMongo",
+      "/searchManualUPC",
       {UPCsubmitted : searchCrit},
      // if we get a response from the server .... 
       function(response) {

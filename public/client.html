@@ -6,6 +6,8 @@
 
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/font.css" />
+    <link rel="stylesheet" type="text/css" href="css/colors.css" />
     <link rel="stylesheet" type="text/css" href="css/cs-style.css" />
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -31,24 +33,57 @@
 <div id = "response" class = 'searchDiv'> the response </div>
 </div> -->
     <div>
+      
       <div id="header" class="flex">
-        <div class="left-flex"><a href=""><div id="header-logo">header-logo</div></a></div>
-          <div id="header-static-menu" class="right-flex">
-              <a href="./pages/account.html"><div id="header-static-menu-account">Account</div></a>
-              <a href="./pages/history.html"><div id="header-static-menu-history">History</div></a>
+        <div class="left-flex">
+          <div id="line-header"></div>
+          <a href=""><div id="header-logo">
+            <img src="./images/checkout_logo.svg" alt="">
+          </div></a>
+        </div>
+          <div id="header-static-menu" class="right-flex z-front">
+              <a href="./pages/account.html"><div id="header-static-menu-account" class="box-center"><h1 class="--Neue-Mentana-Regular">Account</h1></div></a>
+              <a href="./pages/history.html"><div id="header-static-menu-history" class="box-center"><h1 class="--Neue-Mentana-Regular">History</h1></div></a>
           </div>
       </div>
       <div id="content-menu" class="flex">
           <div id="content-menu-left" class="left-flex">
-              <a href="pages/search.html"><div id="content-menu-left-search">Search</div></a>
-              <div id="content-menu-left-about">About</div>
+              <a href="pages/search.html"><div id="content-menu-left-search" class="box-left">
+                <h1 class="--Neue-Mentana-Regular">Search</h1>
+                <p class="--Inter-Regular">Look-up a specific brand or company by name or by entering the EAN/UPC code manually.</p>
+              </div></a>
+              <div id="content-menu-left-about" class="box-left">
+                <h1 class="--Neue-Mentana-Regular">About</h1>
+                <div><h1 class="--Neue-Mentana-Regular">Get in touch</h1></div>
+              </div>
           </div>
-          <div id="content-menu-right" class="right-flex">scan</div>
+          <div id="content-menu-right" class="right-flex box-center">
+            <div id="line-content"></div>
+            <svg height="25%" width="100%" stroke="#2A4A73" stroke-width="2" class="text-line">
+              <text x="20%" y="60%" fill="none" font-size = "100">S</text>
+            </svg>
+            <svg height="25%" width="100%" stroke="#2A4A73" stroke-width="2" class="text-line">
+              <text x="40%" y="60%" fill="none" font-size = "100">C</text>
+            </svg>
+            <svg height="25%" width="100%" stroke="#2A4A73" stroke-width="2" class="text-line">
+              <text x="10%" y="60%" fill="none" font-size = "100">A</text>
+            </svg>
+            <svg height="25%" width="100%" stroke-width="2" class="text-line">
+              <text x="40%" y="60%" fill="none" font-size = "100">N</text>
+            </svg>
+            <!-- <h3 class="--Inter-Black">S</h3>
+            <h3 class="--Inter-Black">C</h3>
+            <h3 class="--Inter-Black">A</h3>
+            <h3 class="--Inter-Black">N</h3> -->
+          </div>
       </div>
-      <div id="sendData">
+            <!-- <div id="line"></div> -->
+      <!-- <div id="line"></div> -->
+      <div id="footer"></div>
+      <!-- <div id="sendData">
         <input type="text" id="host_name" value="type in host name " />
         <input type="text" id="neighbour_hood_group" value=" type in neighbourhood group " />
-      </div>
+      </div> -->
       <!-- <div id="findData">
         <input type="text" id="searchCrit" value="type in search crit (host_name) " />
       </div> -->

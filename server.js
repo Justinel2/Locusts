@@ -8,7 +8,10 @@ const server = require("http").createServer(app);
 let bodyParser = require('body-parser');
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
-app.use('/varsToMongo',handleGetVars);
+
+
+//CONNECTION TO CLIENT
+app.use("/searchManualUPC",handleGetProfileByUPC);
 
 //Node Modules
 // var http = require('follow-redirects').http;
@@ -17,15 +20,22 @@ const Wikiapi = require('wikiapi');
 
 //Classes
 const Item = require("./classes/Item");
+const Company = require("./classes/Company");
+const Blurb = require("./classes/Blurb");
 
 //Database 
 require("dotenv").config();
 const mongoose = require("mongoose");
 const url = process.env.MONGODB_URI;
 // console.log(url);
-const CanadianClimateModel = require("./schemas/CanadianWeatherSchema.js");
+const MedianWagesModel = require("./schemas/MedianWagesSchema.js");
 const { resolve } = require("path");
 const { rejects } = require("assert");
+
+//COMPANY PROFILE
+let newSearchedCompany = new Company();
+let dbOpened = false;
+
 
 //---- Connection to db
 mongoose.connect(url);
@@ -33,6 +43,7 @@ let db = mongoose.connection;
 db.once("open", async function(){
   
   console.log("are here");
+  dbOpened = true;
   // CanadianClimateModel.find({TOTAL_PRECIPITATION_CALGARY:"0.5"}).then((result)=>{
     // console.log(result);
   // });
@@ -68,7 +79,7 @@ function handlePost(request,response){
 }
 
 //EXAMPLE of  user making a query ... 10
-async function  handleGetVars  (request,response,next){
+async function handleGetProfileByUPC (request,response,next){
   let newSearchedItem = new Item();
 
   console.log(request.url);
@@ -87,6 +98,16 @@ async function  handleGetVars  (request,response,next){
   // let company = await getMotherCompany(item.brand);
   newSearchedItem.motherCo = await getMotherCompany("Gatorade");
   console.log(newSearchedItem.motherCo);
+  // newSearchedCompany.financials.symbol = await getMarketSymbol(newSearchedItem.motherCo);
+  // console.log(newSearchedCompany.financials.symbol);
+  // await getYHFinanceProfile(newSearchedCompany.financials.symbol);
+  // await getYHFinanceFinancials(newSearchedCompany.financials.symbol);
+  // await getYHFinanceFinancials("PEP");
+  if (dbOpened) {
+    console.log("db opened")
+    // await getPayrollRatio(newSearchedCompany.financials.symbol);
+    await getFoodAndAgricultureBenchmark("PEP");
+  }
   // newSearchedItem.subsidiaries = await getSubsidiaries(newSearchedItem.motherCo);
   // console.log(item);
   // console.log(item.getItemStats());
@@ -182,5 +203,118 @@ function getMotherCompany (brand) {
 //       resolve(owner);
 //   },2000);
 // }
+
+function getMarketSymbol (company) {  
+  return new Promise((resolve,reject)=> {
+    setTimeout(async ()=>{
+      // console.log(company);
+      const options = {
+        method: 'GET',
+        url: 'https://yh-finance.p.rapidapi.com/auto-complete',
+        qs: {q: company, region: 'US'},
+        headers: {
+          "Content-Type": "application/json",
+          'X-RapidAPI-Key': '2a72e9fbffmsh38828a7a5eedea3p1adf7bjsn1f247acedaf0',
+          'X-RapidAPI-Host': 'yh-finance.p.rapidapi.com',
+          useQueryString: true
+        }
+      };
+      
+      request(options, function (error, response, body) {
+        if (error) throw new Error(error);
+        // console.log(body);
+        let entry = JSON.parse(body);
+        let symbol = entry.quotes[0].symbol;
+        // console.log(entry.quotes[0].symbol);
+        resolve(symbol);
+      });
+    },2000);
+  }) 
+}
+
+function getYHFinanceProfile (symb) {  
+  return new Promise((resolve,reject)=> {
+    setTimeout(async ()=>{
+      const options = {
+        method: 'GET',
+        url: 'https://yh-finance.p.rapidapi.com/stock/v2/get-profile',
+        qs: {symbol: symb, region: 'US'},
+        headers: {
+          'X-RapidAPI-Key': '2a72e9fbffmsh38828a7a5eedea3p1adf7bjsn1f247acedaf0',
+          'X-RapidAPI-Host': 'yh-finance.p.rapidapi.com',
+          useQueryString: true
+        }
+      };
+      
+      request(options, function (error, response, body) {
+        if (error) throw new Error(error);
+      
+        let entry = JSON.parse(body);
+        // console.log(entry);
+        //PROFILE
+        newSearchedCompany.profile.sector = entry.assetProfile.sector;
+        newSearchedCompany.profile.industry = entry.assetProfile.industry;
+        newSearchedCompany.profile.employeesNb = entry.assetProfile.fullTimeEmployees;
+        newSearchedCompany.profile.address[0] = entry.assetProfile.address1;
+        newSearchedCompany.profile.address[1] = entry.assetProfile.city + ", " + entry.assetProfile.state + " " + entry.assetProfile.zip;
+        newSearchedCompany.profile.address[2] = entry.assetProfile.country;
+
+        //FIANCIALS (KEY EXECUTIVES)
+        for (let i = 0; i < entry.assetProfile.companyOfficers.length; i++) {
+
+          newSearchedCompany.financials.keyExecutives[i] = entry.assetProfile.companyOfficers[i].name + ", " + entry.assetProfile.companyOfficers[i].title;
+          if (entry.assetProfile.companyOfficers[i].totalPay != undefined) {
+            newSearchedCompany.financials.keyExecutives[i] += ", " + entry.assetProfile.companyOfficers[i].totalPay.fmt + " (" + entry.assetProfile.companyOfficers[i].fiscalYear + ")"
+          }
+          console.log(newSearchedCompany.financials.keyExecutives[i]);
+        }
+
+
+        resolve();
+      });
+    },2000);
+  }) 
+}
+
+function getYHFinanceFinancials (symb) {  
+  return new Promise((resolve,reject)=> {
+    const options = {
+      method: 'GET',
+      url: 'https://yh-finance.p.rapidapi.com/stock/v2/get-financials',
+      qs: {symbol: symb, region: 'US'},
+      headers: {
+        'X-RapidAPI-Key': '2a72e9fbffmsh38828a7a5eedea3p1adf7bjsn1f247acedaf0',
+        'X-RapidAPI-Host': 'yh-finance.p.rapidapi.com',
+        useQueryString: true
+      }
+    };
+      
+      request(options, function (error, response, body) {
+        if (error) throw new Error(error);
+      
+        let entry = JSON.parse(body);
+        //GROSS REVENUE
+        newSearchedCompany.financials.grossRevenue = entry.timeSeries.trailingTotalRevenue[0].reportedValue.fmt;
+        newSearchedCompany.financials.grossProfit = entry.timeSeries.trailingGrossProfit[0].reportedValue.fmt;
+        newSearchedCompany.financials.profitMargin = newSearchedCompany.financials.getProfitMargin();
+
+        console.log(newSearchedCompany.financials.grossRevenue + ", " + newSearchedCompany.financials.grossProfit + ", profit margin of: " + newSearchedCompany.financials.profitMargin);
+
+        resolve();
+      });
+    },2000);
+  } 
+
+  async function getPayrollRatio (symb) {  
+    return new Promise((resolve,reject)=> {
+      MedianWagesModel.find({Ticker:symb}).then((result)=> {
+        console.log(result[0].Median_Worker_Pay);
+        newSearchedCompany.financials.medianWorkerPayroll = result[0].Median_Worker_Pay;
+        newSearchedCompany.financials.payrollRatio = result[0].Pay_Ratio;
+        newSearchedCompany.financials.fiscalYear = result[0].Fiscal_Year;
+        resolve();
+      });
+      },2000);
+    } 
 
 

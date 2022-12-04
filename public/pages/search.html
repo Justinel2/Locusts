@@ -6,6 +6,8 @@
 
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="../css/colors.css" />
+    <link rel="stylesheet" type="text/css" href="../css/font.css" />
     <link rel="stylesheet" type="text/css" href="../css/cs-style.css" />
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -14,13 +16,18 @@
   </head>
   <body>
     <div>
-        <div id="header" class="flex">
-            <div class="left-flex"><a href=""><div id="header-logo">header-logo</div></a></div>
-              <div id="header-static-menu" class="right-flex">
-                  <a href="./account.html"><div id="header-static-menu-account">Account</div></a>
-                  <a href="./history.html"><div id="header-static-menu-history">History</div></a>
-              </div>
+      <div id="header" class="flex">
+        <div class="left-flex">
+          <div id="line-header"></div>
+          <a href="../client.html"><div id="header-logo">
+            <img src="../images/checkout_logo.svg" alt="">
+          </div></a>
+        </div>
+          <div id="header-static-menu" class="right-flex z-front">
+              <a href="./pages/account.html"><div id="header-static-menu-account" class="box-center"><h1 class="--Neue-Mentana-Regular">Account</h1></div></a>
+              <a href="./pages/history.html"><div id="header-static-menu-history" class="box-center"><h1 class="--Neue-Mentana-Regular">History</h1></div></a>
           </div>
+      </div>
           <div class="container">
             <div><h1>SEARCH</h1></div>
             <div>

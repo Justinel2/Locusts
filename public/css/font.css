@@ -1,0 +1,43 @@
+@font-face {
+    font-family: Inter;
+    src: url(../fonts/Inter.ttf);
+    font-weight: normal;
+}
+
+@font-face {
+    font-family: Inter;
+    src: url(../fonts/Inter-Black.ttf);
+    font-weight: bold;
+}
+
+@font-face {
+    font-family: NeueMentana;
+    src: url(../fonts/NeueMetana-Regular.otf);
+    font-weight: normal;
+}
+
+@font-face {
+    font-family: NeueMentana;
+    src: url(../fonts/NeueMetana-Bold.otf);
+    font-weight: bold;
+}
+
+.--Inter-Regular {
+    font-family: Inter;
+    font-weight: normal;
+}
+
+.--Inter-Black {
+    font-family: Inter;
+    font-weight: bold;
+}
+
+.--Neue-Mentana-Regular {
+    font-family: NeueMentana;
+    font-weight: normal;
+}
+
+.--Neue-Mentana-Bold {
+    font-family: NeueMentana;
+    font-weight: bold;
+}

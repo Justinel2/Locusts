@@ -5,10 +5,36 @@
       margin: 0;
   }
 
-  div {
-      border: 1px solid red;
+  /* div {
+      border: 1px solid var(--black);
+  } */
+
+  a {
+    text-decoration: none;
+    color: var(--black);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 1.5em;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 8em;
+    color: var(--beige);
+    filter: blur(5px);
+  }
+
+  p {
+    font-size: 12px;
   }
   
+  .z-front {
+    /* position: relative */
+    z-index: 100;
+  }
+
   .flex {
       display: flex;
   }
@@ -21,31 +47,199 @@
       width: 45%;
   }
 
+  .box-left {
+    padding: 10% 10% 10% 10%;
+  }
+
+  .box-center {
+    display: flex;
+    align-items: center;
+    padding-left: 0;
+  }
+
+  /* .box-center h1{
+    margin-left: 5%;
+  } */
+
+ #line-header{
+    position: absolute;
+    height: 0%;
+    width: 55%;
+    opacity: 1;
+    border-bottom: 3px solid var(--green);
+    margin: 0;
+    /* margin-top: -100vh; */
+    animation: line 8s linear forwards;
+    /* animation-duration: 2s; */
+    animation-iteration-count: infinite;
+    /* z-index: 10; */
+  }
+
   #header {
+    position: relative;
       height: 17vh;
+      overflow: hidden;
   }
 
   #header-logo {
     height: 100%;
+    background-image: linear-gradient(45deg, var(--beige), var(--black));
+    display: flex;
+    justify-content: center;
+  }
+
+  #header-logo img {
+    width: 80%;
+  }
+
+  #header-static-menu a div {
+    justify-content: center;
+  }
+
+  #header-static-menu a div h1{
+    font-size: 1em;
   }
 
   #header-static-menu a, #header-static-menu div {
-      height: 50%;
+      height: 50%;     
   }
 
   #header-static-menu-account {
+    background-color: var(--black);
+  }
 
+  #header-static-menu-account h1{
+    color: var(--beige);
+  }
+
+  #header-static-menu-history {
+    background-image: linear-gradient(135deg, var(--green), var(--beige), var(--beige));
   }
 
   #content-menu {
       height: 83vh;
   }
 
-  #content-menu-left div {
-      height: 50%;
+  #content-menu-left, .container {
+    height: 100%;
+    background:
+    radial-gradient(ellipse at 0% 0%, var(--beige) 18.06%, rgba(255,255,255,0) 81.25%) 0px 0px / 100% 100% no-repeat no-repeat,
+    radial-gradient(ellipse at 100% 0%, var(--yellow) 0%, var(--green) 80.56%) 0px 0px / 100% 100% no-repeat no-repeat;  
   }
 
-}
+  #content-menu-left-about {
+    background:
+    linear-gradient(180deg, rgba(255,255,255,0), var(--black)),
+    radial-gradient(ellipse at 25% 0%, var(--beige) 1.06%, rgba(255,255,255,0) 50.25%) 0px 0px / 100% 100% no-repeat no-repeat;
+  }
+
+  #content-menu-left-about div {
+    margin-top: 110%;
+    color: var(--beige);
+  }
+
+  #content-menu-left div {
+      height: 50%;
+      -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+      -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+      box-sizing: border-box;    
+  }
+
+  #content-menu-right {
+    /* position: relative; */
+    background:
+    radial-gradient(ellipse at 100% 0%, var(--beige) 0%, var(--red) 90.56%) 0px 0px / 100% 100% no-repeat no-repeat; 
+    flex-direction: column;
+    display: flex;
+    /* justify-content: center; */
+  }
+
+  svg {
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    stroke: var(--green);
+  }
+
+  text {
+    font-family: NeueMentana;
+    font-weight: bold;
+  }
+
+  .text-line text {
+    stroke-dasharray: 500;
+    stroke-dashoffset: 500;
+    animation: dash 5s linear forwards, filling 4s ease-in forwards;
+    animation-duration: 5s;
+    animation-iteration-count: infinite;
+    /* filter: blur(1px); */
+    opacity: 0.6;
+  }
+
+  #line-content{
+    position: absolute;
+    height: 0vh;
+    width: 45%;
+    border-bottom: 3px solid var(--green);
+    margin: -16.5vh;
+    /* margin-top: -100vh; */
+    animation: line-content 8s linear forwards;
+    /* animation-duration: 2s; */
+    animation-iteration-count: infinite;
+    /* z-index: 10; */
+  }
+
+  #footer {
+    height: 10vh;
+    /* width: 100%; */
+    background-color: var(--black);
+  }
+
+  @keyframes line {
+    /* to {
+      height: 100vh;
+    } */
+    84%, 100% {
+      margin-top: 100vh;
+    }
+  }
+
+  @keyframes line-content {
+    to {
+      margin-top: 100vh;
+    }
+    /* 60%, 100% {
+      height: 100vh;
+      /* opacity: 1; */
+    } 
+
+  @keyframes delay-animation {
+    to {
+      /* height: 0vh; */
+      opacity: 0;
+    }
+  }
+
+  @keyframes dash {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  
+  @keyframes filling {
+    from{
+      fill: var(--green);
+      fill-opacity: 0;
+      /* filter: blur(0px); */
+    }
+    to {
+      fill: var(--red);
+      fill-opacity: 1;
+      /* filter: blur(2px); */
+    }
+  }
+
+
 
 
 /* body{
@@ -87,3 +281,4 @@ input[type='text']{
       }
  
  */
+}

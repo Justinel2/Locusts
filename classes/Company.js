@@ -1,7 +1,15 @@
+const CompanyOverview = require("./CompanyOverview");
+const FinancialProfile = require("./FinancialProfile");
+const Blurb = require("./classes/Blurb");
+
 class Company {
-    constructor(name, subsidiaries) {
+    constructor(name, profile, financials, social, environment) {
       this.name = "";
-      this.subsidiaries = [];
+      // this.profile = [];
+      this.profile = new CompanyOverview();
+      this.financials = new FinancialProfile();
+      this.social = [];
+      this.environment = [];
     }
   
     // getItemStats() {
@@ -15,4 +23,4 @@ class Company {
     // }
   }
   
-  module.exports = Item;
+  module.exports = Company;
