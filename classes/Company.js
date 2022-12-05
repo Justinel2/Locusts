@@ -1,26 +1,20 @@
 const CompanyOverview = require("./CompanyOverview");
 const FinancialProfile = require("./FinancialProfile");
-const Blurb = require("./classes/Blurb");
+const Blurb = require("./Blurb");
+const SubBlurb = require("./SubBlurb");
 
 class Company {
-    constructor(name, profile, financials, social, environment) {
+    constructor(name, profile, financials, govStrategies, workersSocialInclusion, environment, nutrition) {
       this.name = "";
       // this.profile = [];
       this.profile = new CompanyOverview();
       this.financials = new FinancialProfile();
-      this.social = [];
+      this.govStrategies = [];
+      this.workersSocialInclusion= [];
       this.environment = [];
+      this.nutrition = [];
     }
-  
-    // getItemStats() {
-    //   return `
-    //     Name: ${this.name}
-    //     Brand: ${this.brand}
-    //     MotherCo: ${this.motherCo}
-    //     ImageURL: ${this.imageURL}
-    //     Subsidies: ${this.subsidies}
-    //   `;
-    // }
+
   }
   
   module.exports = Company;

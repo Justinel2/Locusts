@@ -22,6 +22,7 @@ const Wikiapi = require('wikiapi');
 const Item = require("./classes/Item");
 const Company = require("./classes/Company");
 const Blurb = require("./classes/Blurb");
+const SubBlurb = require("./classes/SubBlurb");
 
 //Database 
 require("dotenv").config();
@@ -29,8 +30,11 @@ const mongoose = require("mongoose");
 const url = process.env.MONGODB_URI;
 // console.log(url);
 const MedianWagesModel = require("./schemas/MedianWagesSchema.js");
+const FAABModel = require("./schemas/FAABSchema.js");
+const FAABLegendModel = require("./schemas/FAABLegendsSchema.js");
 const { resolve } = require("path");
 const { rejects } = require("assert");
+const e = require("express");
 
 //COMPANY PROFILE
 let newSearchedCompany = new Company();
@@ -84,7 +88,6 @@ async function handleGetProfileByUPC (request,response,next){
 
   console.log(request.url);
   console.log(request.query.UPCsubmitted);
-  response.send("SUCCESS GET");
   // let results = await CanadianClimateModel.find({TOTAL_PRECIPITATION_CALGARY:request.query.UPCsubmitted});
   // console.log(results[0]);
   // response.send(results);
@@ -97,20 +100,23 @@ async function handleGetProfileByUPC (request,response,next){
   // let item =  await getUPCPage(request.query.UPCsubmitted);
   // let company = await getMotherCompany(item.brand);
   newSearchedItem.motherCo = await getMotherCompany("Gatorade");
-  console.log(newSearchedItem.motherCo);
-  // newSearchedCompany.financials.symbol = await getMarketSymbol(newSearchedItem.motherCo);
+  newSearchedCompany.name = newSearchedItem.motherCo;
+  console.log(newSearchedCompany.name);
+  newSearchedCompany.financials.symbol = await getMarketSymbol(newSearchedItem.motherCo);
   // console.log(newSearchedCompany.financials.symbol);
-  // await getYHFinanceProfile(newSearchedCompany.financials.symbol);
-  // await getYHFinanceFinancials(newSearchedCompany.financials.symbol);
-  // await getYHFinanceFinancials("PEP");
+  await getYHFinanceProfile(newSearchedCompany.financials.symbol);
+  await getYHFinanceFinancials(newSearchedCompany.financials.symbol);
+  await getYHFinanceFinancials("PEP");
   if (dbOpened) {
     console.log("db opened")
-    // await getPayrollRatio(newSearchedCompany.financials.symbol);
-    await getFoodAndAgricultureBenchmark("PEP");
+    await getPayrollRatio(newSearchedCompany.financials.symbol);
+    // await getPayrollRatio("PEP");
+    await getFoodAndAgricultureBenchmark(newSearchedCompany.name);
   }
   // newSearchedItem.subsidiaries = await getSubsidiaries(newSearchedItem.motherCo);
   // console.log(item);
   // console.log(item.getItemStats());
+  response.send(newSearchedCompany);
 }
 
 function getUPCPage (upc) {  
@@ -317,4 +323,146 @@ function getYHFinanceFinancials (symb) {
       },2000);
     } 
 
+    async function getFoodAndAgricultureBenchmark (co) {  
+      let upstream = false;
+      let downstream = false;
+      let source = "Food and Agriculture Benchmark";
+      let year = "2021";
+      let nextAssessment = "2023";
+      let govSubAreas = 3;
+      let workersSubAreas = 24;
+      let environmentSubAreas = 12;
+      let nutritionSubAreas = 6;
+      return new Promise((resolve,reject)=> {
+        FAABModel.find({Company_name:"PepsiCo"}).then(async (result)=> {
+          console.log(result);
 
+          //Create main blurb by subject
+          newSearchedCompany.govStrategies.push(new Blurb("MA1", await getLegend('MA1', "n"), result[0].MA1 + "/10", year, source, nextAssessment, ""));
+          newSearchedCompany.workersSocialInclusion.push(new Blurb("MA4", await getLegend('MA4', "n"), result[0].MA4 + "/30", year, source, nextAssessment, ""));
+          newSearchedCompany.environment.push(new Blurb("MA2", await getLegend('MA2', "n"), result[0].MA2 + "/30", year, source, nextAssessment, ""));
+          newSearchedCompany.nutrition.push(new Blurb("MA3", await getLegend('MA3', "n"), result[0].MA3 + "/30", year, source, nextAssessment, ""));
+
+          //Check for upstream and downstream qualities of the company
+          console.log(result[0].Agricultural_inputs);
+          if (result[0].Agricultural_inputs === 'Yes' || result[0].Agricultural_products_and_commodities === 'Yes' || result[0].Animal_proteins === 'Yes') {
+            upstream = true;
+          }
+          if (result[0].Food_and_beverage_manufacturers_processors === 'Yes' || result[0].Food_retailers === 'Yes' || result[0].Restaurants_and_food_service === 'Yes') {
+            downstream = true;
+          }
+
+          //Create subBlurbsfor each mainBlurb
+          //GOVERNANCE AND STRATEGY
+          for (let i = 1; i <= govSubAreas; i++) {
+            let id = "A" + i;
+            // console.log(id);
+            let rating = result[0][id];
+            let scoreLeg = rating.replace(',', '');
+            let scoreDenominator = "2";
+            let legend = await getLegend(id, ""); 
+            newSearchedCompany.govStrategies[0].subBlurbs.push(new SubBlurb(id, legend.Name, rating + "/" + scoreDenominator, "", legend['Score' + scoreLeg + "_Pros"], legend['Score' + scoreLeg + "_Cons"]));
+            // console.log(newSearchedCompany.govStrategies[0]);
+          }
+
+          //WORKERS AND SOCIAL INCLUSION
+          for (let i = 1; i <= workersSubAreas; i++) {
+            let id = "D" + i;
+            // console.log(id);
+            let rating = result[0][id];
+            let scoreLeg = rating.replace(',', '');
+            let scoreDenominator = "2";
+            let legend = await getLegend(id, ""); 
+            // console.log(legend.Spec);
+            if (legend.Spec === 'LIM') {
+              scoreDenominator = "1";
+            }
+            newSearchedCompany.workersSocialInclusion[0].subBlurbs.push(new SubBlurb(id, legend.Name, rating + "/" + scoreDenominator, "", legend['Score' + scoreLeg + "_Pros"], legend['Score' + scoreLeg + "_Cons"]));
+            // console.log(newSearchedCompany.workersSocialInclusion[0]);
+          }
+          //ENVIRONMENT
+          for (let i = 1; i <= environmentSubAreas; i++) {
+            let id = "B" + i;
+            // console.log(id);
+            let rating = result[0][id];
+            let scoreLeg = rating.replace(',', '');
+            let scoreDenominator = "2";
+            let spec = 'DOWNSTREAM';
+            let legend;
+            // console.log(legend.Spec);
+            if (upstream) {
+              spec = 'UPSTREAM';
+            }
+            // console.log(upstream);
+            // console.log(spec);
+            if (i >= 6 && i <= 8) {
+              legend = await getLegendByStream(id, spec);
+            }
+            else {
+              legend = await getLegend(id, "");
+            }
+
+            // console.log(legend)
+            newSearchedCompany.environment[0].subBlurbs.push(new SubBlurb(id, legend.Name, rating + "/" + scoreDenominator, "", legend['Score' + scoreLeg + "_Pros"], legend['Score' + scoreLeg + "_Cons"]));
+            // console.log(newSearchedCompany.environment[0]);
+          }
+
+          //NUTRITION
+          for (let i = 1; i <= nutritionSubAreas; i++) {
+            let id = "C" + i;
+            // console.log(id);
+            let rating = result[0][id];
+            let scoreLeg = rating.replace(',', '');
+            let scoreDenominator = "2";
+            let spec = 'UPSTREAM';
+            let legend;
+            // console.log(legend.Spec);
+            if (downstream) {
+              spec = 'DOWNSTREAM';
+            }
+            console.log(upstream);
+            console.log(spec);
+            if (i <= 2) {
+              legend = await getLegendByStream(id, spec);
+            }
+            else {
+              legend = await getLegend(id, "");
+            }
+
+            // console.log(legend)
+            newSearchedCompany.nutrition[0].subBlurbs.push(new SubBlurb(id, legend.Name, rating + "/" + scoreDenominator, "", legend['Score' + scoreLeg + "_Pros"], legend['Score' + scoreLeg + "_Cons"]));
+            // console.log(newSearchedCompany.nutrition[0]);
+          }
+
+
+          // console.log(newSearchedCompany.govStrategies[0]);
+
+          // newSearchedCompany.compileResource(source, year, nextAssessment, result[0], upstream, downstream, legend);
+          // newSearchedCompany.govStrategies.push(new Blurb());
+          // newSearchedCompany.govStrategies.
+          // console.log(newSearchedCompany.govStrategies[0]);
+          resolve();
+        });
+        },2000);
+      } 
+
+      async function getLegend (code, q) {  
+        return new Promise((resolve,reject)=> {
+          FAABLegendModel.find({Code:code}).then((result)=> {
+            // console.log(result);
+            if (q === "n") {
+              resolve(result[0].Name);
+            }
+            else {
+              resolve(result[0])
+            }
+          });
+          },2000);
+        } 
+        async function getLegendByStream (code, q) {  
+          return new Promise((resolve,reject)=> {
+            FAABLegendModel.find({Code:code, Spec:q}).then((result)=> {
+                resolve(result[0])
+            });
+            },2000);
+          } 

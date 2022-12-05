@@ -2,6 +2,7 @@
 <html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>DATA AND MONGO</title>
 
     <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -28,21 +29,88 @@
               <a href="./pages/history.html"><div id="header-static-menu-history" class="box-center"><h1 class="--Neue-Mentana-Regular">History</h1></div></a>
           </div>
       </div>
-          <div class="container">
-            <div><h1>SEARCH</h1></div>
-            <div>
-                <h2>BY KEYWORD</h2>
-                <p>Enter a brand or company name in the research bar below to search through the different databases.</p>
-                <input type="text" id="searchCompanyCrit" value="type here" />
-                <!-- <input type="button" value="Get Data!" id="findData" /> -->
+          <div id="container-search" class="hidden">
+            <div><h1 class="--Neue-Mentana-Regular">SEARCH</h1></div>
+            <div id="container-inner-part-top" class="sub-container">
+                <h2 class="--Inter-Black">BY KEYWORD</h2>
+                <p class="--Inter-Regular">Enter a brand or company name in the research bar below to search through the different databases.</p>
+                <input type="text" id="searchCompanyCrit" value="type here" class="--Inter-Regular"/>
+                <input type="button" value="Search by Keyword" id="findData" class="--Inter-Regular"/>
             </div>
-            <div>
-                <h2>BY UPC CODE</h2>
-                <p>Enter the number located under the barcode of a grocery store item (between 12 and 13 numbers) manually in the research bar below.</p>
-                <input type="text" id="searchCrit" value="type here" />
-                <input type="button" value="Get Data!" id="findData" />
+            <div id="container-inner-part-bottom" class="sub-container">
+                <h2 class="--Inter-Black">BY UPC CODE</h2>
+                <p class="--Inter-Regular">Enter the number located under the barcode of a grocery store item (between 12 and 13 numbers) manually in the research bar below.</p>
+                <input type="text" id="searchCrit" value="type here" class="--Inter-Regular"/>
+                <input type="button" value="Search by UPC Code" id="findData" class="--Inter-Regular"/>
+            </div>
+          </div>
+          <div id="container-result" class="active">
+            <div id="container-result-item" class="flex">
+              <div></div>
+              <div></div>
+            </div>
+            <div id="container-result-company">
+
             </div>
           </div>
     </div>
+    <style>
+
+      .active {
+        display: block;
+      }
+
+      .hidden {
+        display:none;
+      }
+
+      #container-search {
+        height: 83vh;
+        padding: 10% 5% 5% 5%;
+        background: 
+          radial-gradient(ellipse at 0% 0%, var(--beige) 18.06%, rgba(255,255,255,0) 81.25%) 0px 0px / 100% 100% no-repeat no-repeat,
+          radial-gradient(ellipse at 100% 0%, var(--yellow) 0%, var(--green) 80.56%) 0px 0px / 100% 100% no-repeat no-repeat;
+      }
+
+      h1 {
+        font-size: 36px;
+      }
+
+      .sub-container {
+        height: 30%;
+        padding: 16px 5% 0 0;
+      }
+
+      #container-inner-part-top {
+        margin-top: 24px;
+        background: 
+        /* linear-gradient(180deg, rgba(255,255,255,0), var(--black)), */
+        radial-gradient(ellipse at 75% 0%, var(--green) 1.06%, rgba(255,255,255,0) 50.25%) 0px 0px / 100% 100% no-repeat no-repeat;
+      }
+
+      #container-inner-part-bottom {
+        background: 
+        /* linear-gradient(180deg, rgba(255,255,255,0), var(--black)), */
+        radial-gradient(ellipse at 75% 0%, var(--yellow) 1.06%, rgba(255,255,255,0) 50.25%) 0px 0px / 100% 100% no-repeat no-repeat;
+      }
+      
+      #container-result {
+        height: 83vh;
+        background: 
+          radial-gradient(ellipse at 0% 0%, var(--beige) 18.06%, rgba(255,255,255,0) 81.25%) 0px 0px / 100% 100% no-repeat no-repeat,
+          radial-gradient(ellipse at 100% 0%, var(--yellow) 0%, var(--green) 80.56%) 0px 0px / 100% 100% no-repeat no-repeat;
+      }
+
+      #container-result-item {
+        background-color: var(--black);
+        height: 17vh;
+      }
+
+      #container-result-item div {
+        height: 100%;
+        width: 50%;
+      }
+
+      </style>
   </body>
 </html>
