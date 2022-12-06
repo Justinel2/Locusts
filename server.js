@@ -102,10 +102,18 @@ async function handleGetProfileByKeyword (request,response,next){
   console.log(newSearchedItem.brand);
 
   //From the brand, try to get information about the mother company
-  let result = handleGetProfile(newSearchedItem.brand);
+  await handleGetProfile(newSearchedItem.brand);
+
+  console.log("back in the main function to send the info to the client");
+
+  //Construct an object to pass the item and the company objects to the client
+  let scannedResults = [
+    this.item = newSearchedItem,
+    this.company = newSearchedCompany
+  ]
 
   //Send results to the client
-  response.send(result);
+  response.send(scannedResults);
 }
 
 //-------------------------------------------------------------------------------------------------------------------------------------
@@ -134,10 +142,18 @@ async function handleGetProfileByUPC (request,response,next){
     newSearchedItem.imageURL = itemArgs[2];
 
     //From the brand, try to get information about the mother company
-    let result = handleGetProfile(newSearchedItem.brand);
+    await handleGetProfile(newSearchedItem.brand);
 
+    console.log("back in the main function to send the info to the client");
+
+    //Construct an object to pass the item and the company objects to the client
+    let scannedResults = [
+      this.item = newSearchedItem,
+      this.company = newSearchedCompany
+    ]
+  
     //Send results to the client
-    response.send(result);
+    response.send(scannedResults);
   
   }
 }
@@ -263,13 +279,8 @@ async function handleGetProfile(co) {
       //Get the 'Food and Agriculture Benchmark' result for this company
       await getFoodAndAgricultureBenchmark(newSearchedCompany.name);
     }
-    
-    //Construct an object to pass the item and the company objects to the client
-    let scannedResults = [
-      this.item = newSearchedItem,
-      this.company = newSearchedCompany
-    ]
-    result(scannedResults);
+
+    // return(scannedResults);
 }
 }
 
@@ -304,7 +315,7 @@ function getMotherCompany (q) {
         console.log("infobox is defined");
         //Stringify each of the infobox values
         for (const [key, value] of Object.entries(infobox)){
-          console.log(value);
+          // console.log(value);
           infobox[key] = value.toString();
         } 
         // // print json of the infobox
@@ -438,7 +449,7 @@ function getYHFinanceProfile (symb) {
           if (entry.assetProfile.companyOfficers[i].totalPay != undefined) {
             newSearchedCompany.financials.keyExecutives[i] += ", " + entry.assetProfile.companyOfficers[i].totalPay.fmt;
           }
-          console.log(newSearchedCompany.financials.keyExecutives[i]);
+          // console.log(newSearchedCompany.financials.keyExecutives[i]);
         }
         //Resolve an empty response (void)
         resolve();
@@ -530,93 +541,96 @@ function getYHFinanceFinancials (symb) {
       return new Promise((resolve,reject)=> {
         //Find the company entry with the company name
         FAABModel.find({Company_name:co}).then(async (result)=> {
-          console.log(result);
+          // console.log(result);
 
-          //Create main blurb objects by subject
-          newSearchedCompany.govStrategies.push(new Blurb("MA1", await getLegend('MA1', "n"), result[0].MA1 + "/10", year, source, researchName, nextAssessment, ""));
-          newSearchedCompany.workersSocialInclusion.push(new Blurb("MA4", await getLegend('MA4', "n"), result[0].MA4 + "/30", year, source, researchName, nextAssessment, ""));
-          newSearchedCompany.environment.push(new Blurb("MA2", await getLegend('MA2', "n"), result[0].MA2 + "/30", year, source, researchName, nextAssessment, ""));
-          newSearchedCompany.nutrition.push(new Blurb("MA3", await getLegend('MA3', "n"), result[0].MA3 + "/30", year, source, researchName, nextAssessment, ""));
+          if (result != undefined) {
+            console.log("retrieving company habits information from the databases")
+            //Create main blurb objects by subject
+            newSearchedCompany.govStrategies.push(new Blurb("MA1", await getLegend('MA1', "n"), result[0].MA1 + "/10", year, source, researchName, nextAssessment, ""));
+            newSearchedCompany.workersSocialInclusion.push(new Blurb("MA4", await getLegend('MA4', "n"), result[0].MA4 + "/30", year, source, researchName, nextAssessment, ""));
+            newSearchedCompany.environment.push(new Blurb("MA2", await getLegend('MA2', "n"), result[0].MA2 + "/30", year, source, researchName, nextAssessment, ""));
+            newSearchedCompany.nutrition.push(new Blurb("MA3", await getLegend('MA3', "n"), result[0].MA3 + "/30", year, source, researchName, nextAssessment, ""));
 
-          //Check for upstream and downstream qualities of the company
-          console.log(result[0].Agricultural_inputs);
-          if (result[0].Agricultural_inputs === 'Yes' || result[0].Agricultural_products_and_commodities === 'Yes' || result[0].Animal_proteins === 'Yes') {
-            upstream = true;
+            //Check for upstream and downstream qualities of the company
+            if (result[0].Agricultural_inputs === 'Yes' || result[0].Agricultural_products_and_commodities === 'Yes' || result[0].Animal_proteins === 'Yes') {
+              upstream = true;
+            }
+            if (result[0].Food_and_beverage_manufacturers_processors === 'Yes' || result[0].Food_retailers === 'Yes' || result[0].Restaurants_and_food_service === 'Yes') {
+              downstream = true;
+            }
+
+            //Create subBlurbs for each mainBlurb
+
+            //GOVERNANCE AND STRATEGY
+            for (let i = 1; i <= govSubAreas; i++) {
+              let id = "A" + i;
+              let rating = result[0][id];
+              let scoreLeg = rating.replace(',', '');
+              let scoreDenominator = "2";
+              let legend = await getLegend(id, ""); 
+              newSearchedCompany.govStrategies[0].subBlurbs.push(new SubBlurb(id, legend.Name, rating + "/" + scoreDenominator, "", legend['Score' + scoreLeg + "_Pros"], legend['Score' + scoreLeg + "_Cons"]));
+            }
+
+            //WORKERS AND SOCIAL INCLUSION
+            for (let i = 1; i <= workersSubAreas; i++) {
+              let id = "D" + i;
+              let rating = result[0][id];
+              let scoreLeg = rating.replace(',', '');
+              let scoreDenominator = "2";
+              let legend = await getLegend(id, ""); 
+              if (legend.Spec === 'LIM') {
+                scoreDenominator = "1";
+              }
+              //INSTANTIANCE NEW SUB BLURBS IN EACH BLURB OBJECT
+              newSearchedCompany.workersSocialInclusion[0].subBlurbs.push(new SubBlurb(id, legend.Name, rating + "/" + scoreDenominator, "", legend['Score' + scoreLeg + "_Pros"], legend['Score' + scoreLeg + "_Cons"]));
+            }
+
+            //ENVIRONMENT
+            for (let i = 1; i <= environmentSubAreas; i++) {
+              let id = "B" + i;
+              let rating = result[0][id];
+              let scoreLeg = rating.replace(',', '');
+              let scoreDenominator = "2";
+              let spec = 'DOWNSTREAM';
+              let legend;
+              if (upstream) {
+                spec = 'UPSTREAM';
+              }
+              if (i >= 6 && i <= 8) {
+                legend = await getLegendByStream(id, spec);
+              }
+              else {
+                legend = await getLegend(id, "");
+              }
+              //INSTANTIANCE NEW SUB BLURBS IN EACH BLURB OBJECT
+              newSearchedCompany.environment[0].subBlurbs.push(new SubBlurb(id, legend.Name, rating + "/" + scoreDenominator, "", legend['Score' + scoreLeg + "_Pros"], legend['Score' + scoreLeg + "_Cons"]));
+            }
+
+            //NUTRITION
+            for (let i = 1; i <= nutritionSubAreas; i++) {
+              let id = "C" + i;
+              let rating = result[0][id];
+              let scoreLeg = rating.replace(',', '');
+              let scoreDenominator = "2";
+              let spec = 'UPSTREAM';
+              let legend;
+              if (downstream) {
+                spec = 'DOWNSTREAM';
+              }
+              if (i <= 2) {
+                legend = await getLegendByStream(id, spec);
+              }
+              else {
+                legend = await getLegend(id, "");
+              }
+
+              //INSTANTIANCE NEW SUB BLURBS IN EACH BLURB OBJECT 
+              newSearchedCompany.nutrition[0].subBlurbs.push(new SubBlurb(id, legend.Name, rating + "/" + scoreDenominator, "", legend['Score' + scoreLeg + "_Pros"], legend['Score' + scoreLeg + "_Cons"]));
+            }
+
+            resolve();
           }
-          if (result[0].Food_and_beverage_manufacturers_processors === 'Yes' || result[0].Food_retailers === 'Yes' || result[0].Restaurants_and_food_service === 'Yes') {
-            downstream = true;
-          }
 
-          //Create subBlurbs for each mainBlurb
-
-          //GOVERNANCE AND STRATEGY
-          for (let i = 1; i <= govSubAreas; i++) {
-            let id = "A" + i;
-            let rating = result[0][id];
-            let scoreLeg = rating.replace(',', '');
-            let scoreDenominator = "2";
-            let legend = await getLegend(id, ""); 
-            newSearchedCompany.govStrategies[0].subBlurbs.push(new SubBlurb(id, legend.Name, rating + "/" + scoreDenominator, "", legend['Score' + scoreLeg + "_Pros"], legend['Score' + scoreLeg + "_Cons"]));
-          }
-
-          //WORKERS AND SOCIAL INCLUSION
-          for (let i = 1; i <= workersSubAreas; i++) {
-            let id = "D" + i;
-            let rating = result[0][id];
-            let scoreLeg = rating.replace(',', '');
-            let scoreDenominator = "2";
-            let legend = await getLegend(id, ""); 
-            if (legend.Spec === 'LIM') {
-              scoreDenominator = "1";
-            }
-            //INSTANTIANCE NEW SUB BLURBS IN EACH BLURB OBJECT
-            newSearchedCompany.workersSocialInclusion[0].subBlurbs.push(new SubBlurb(id, legend.Name, rating + "/" + scoreDenominator, "", legend['Score' + scoreLeg + "_Pros"], legend['Score' + scoreLeg + "_Cons"]));
-          }
-
-          //ENVIRONMENT
-          for (let i = 1; i <= environmentSubAreas; i++) {
-            let id = "B" + i;
-            let rating = result[0][id];
-            let scoreLeg = rating.replace(',', '');
-            let scoreDenominator = "2";
-            let spec = 'DOWNSTREAM';
-            let legend;
-            if (upstream) {
-              spec = 'UPSTREAM';
-            }
-            if (i >= 6 && i <= 8) {
-              legend = await getLegendByStream(id, spec);
-            }
-            else {
-              legend = await getLegend(id, "");
-            }
-            //INSTANTIANCE NEW SUB BLURBS IN EACH BLURB OBJECT
-            newSearchedCompany.environment[0].subBlurbs.push(new SubBlurb(id, legend.Name, rating + "/" + scoreDenominator, "", legend['Score' + scoreLeg + "_Pros"], legend['Score' + scoreLeg + "_Cons"]));
-          }
-
-          //NUTRITION
-          for (let i = 1; i <= nutritionSubAreas; i++) {
-            let id = "C" + i;
-            let rating = result[0][id];
-            let scoreLeg = rating.replace(',', '');
-            let scoreDenominator = "2";
-            let spec = 'UPSTREAM';
-            let legend;
-            if (downstream) {
-              spec = 'DOWNSTREAM';
-            }
-            if (i <= 2) {
-              legend = await getLegendByStream(id, spec);
-            }
-            else {
-              legend = await getLegend(id, "");
-            }
-
-            //INSTANTIANCE NEW SUB BLURBS IN EACH BLURB OBJECT 
-            newSearchedCompany.nutrition[0].subBlurbs.push(new SubBlurb(id, legend.Name, rating + "/" + scoreDenominator, "", legend['Score' + scoreLeg + "_Pros"], legend['Score' + scoreLeg + "_Cons"]));
-          }
-
-          resolve();
         });
         },2000);
       } 

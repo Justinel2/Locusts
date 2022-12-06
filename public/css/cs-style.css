@@ -63,10 +63,10 @@
     padding: 0 10px 0 10px;
   }
 
-  /* input:focus {
+  input:focus {
     background-color: var(--green);
     border:2px solid var(--black);
-  } */
+  }
   
   .z-front {
     /* position: relative */

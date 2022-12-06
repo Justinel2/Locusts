@@ -14,6 +14,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
  
     <script src="../js/client.js"></script>
+    <!-- <script src="../js/UI.js"></script> -->
   </head>
   <body>
     <div>
@@ -53,6 +54,7 @@
                 <div id="container-result-item-description">
                   <h2 class="--Inter-Black">SCANNED</h2>
                   <p class="--Inter-Regular" id="product-name">No product found</p>
+                  <p class="--Inter-Regular" id="product-brand">No brand found</p>
                   <p class="--Inter-Regular" id="product-company">No company found</p>
                 </div>
               </div>
@@ -99,10 +101,11 @@
                   <p class="--Inter-Black">Key Executives, annual salary</p>
                 </div>
               </div>
+              <!-- GOVERNANCE TAB -->
               <div id="tab-governance" class="tab">
-                <h2>GOVERNANCE AND MANAGEMENT +</h2>
-                <div id="tab-governance-content" class="active">
-                  <!-- <div class="new-resource">
+                <h2 class="togglable">GOVERNANCE AND MANAGEMENT +</h2>
+                <div id="tab-governance-content" class="hidden">
+                  <div class="new-resource" id="element-id-1">
                     <div class="flex">
                       <div class="eighty">
                         <p class="subtext">Assessment from the Organization bla bla bla</p>
@@ -111,33 +114,52 @@
                       <div class="twenty"><p>2021</p></div>
                     </div>
                     <div class="flex">
-                      <div class="eighty"><p class="--Inter-Black">Title of the Criteria Studied +</p></div>
+                      <div class="eighty"><p class="--Inter-Black sub-togglable" onclick="subToggle(this)">Title of the Criteria Studied +</p></div>
                       <div class="twenty">
                         <p>score</p>
                       </div>
                     </div>
-                    <div class="sub-blurb active">
+                    <div id="element-sub-id-1" class="sub-blurb hidden">
                       <div class="flex">
-                        <div class="eighty"><p class="--Inter-Black">Sub Criteria +</p></div>
+                        <div class="eighty"><p class="--Inter-Black sub-details-togglable" onclick="subToggleDetails(this)">Sub Criteria +</p></div>
                         <div class="twenty"><p>Score</p></div>
                       </div>
-                      <div class="sub-blurb-details active">
+                      <div class="sub-blurb-details hidden">
                         <p>Description if there is one</p>
                         <div>
                           <div>
                             <p>Pros:</p>
-                            <p>Here are the pros</p>
+                            <p class="to-format">The company:  > Publicly states that workers shall not be required to work more than 48 hours in a regular work week or 60 hours including overtime. AND > States that all overtime work must be consensual and be paid at a premium rate. AND > Has a publicly available statement of policy that expects its business relationships to commit to respecting the health and safety of their workers. AND
+                              > Has a public expectation that its business relationships shall not require workers to work more than 48 hours in a regular work week or 60 hours including overtime.</p>
                           </div>
                           <div>
                             <p>Cons:</p>
-                            <p>Here are the cons</p>
+                            <p>The company:  > Publicly states that workers shall not be required to work more than 48 hours in a regular work week or 60 hours including overtime. AND > States that all overtime work must be consensual and be paid at a premium rate. </p>
                           </div>
                         </div>
-                        <p>See: <a href=""></a></p>
+                        <p>See: <a class="to-format-link" href="undefined">undefined</a></p>
                       </div>
                     </div>
-                  </div> -->
+                  </div>
                 </div>
+              </div>
+
+              <!-- WORKERS TAB -->
+              <div id="tab-workers" class="tab">
+                <h2 class="togglable">WORKERS AND SOCIAL</h2>
+                <div id="tab-workers-content" class="hidden"></div>
+              </div>
+
+              <!-- ENVIRONMENT TAB -->
+              <div id="tab-environment" class="tab">
+                <h2 class="togglable">ENVIRONMENT</h2>
+                <div id="tab-environment-content" class="hidden"></div>
+              </div>
+
+              <!-- WORKERS TAB -->
+              <div id="tab-nutrition" class="tab">
+                <h2 class="togglable">NUTRITION</h2>
+                <div id="tab-nutrition-content" class="hidden"></div>
               </div>
             </div>
           </div>
@@ -167,6 +189,11 @@
 
       p.subtext, span.subtext {
         font-size: 12px;
+      }
+
+      li {
+        font-size: 14px;
+        padding-bottom: 10px;
       }
 
       #container-search {

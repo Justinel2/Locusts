@@ -13,7 +13,6 @@ class FinancialProfile {
     getProfitMargin() {
         let revenue = this.grossRevenue.replace('B','');
         let profit = this.grossProfit.replace('B','');
-        console.log(revenue + ", " + profit );
         let margin = (100 * Number(profit) / Number(revenue)).toFixed(2);
         return ("" + margin + "%");
     }
