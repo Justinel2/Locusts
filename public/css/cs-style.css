@@ -227,6 +227,10 @@
     /* z-index: 10; */
   }
 
+  #error-message {
+    padding-top: 10px;
+  }
+
   #footer {
     height: 10vh;
     /* width: 100%; */

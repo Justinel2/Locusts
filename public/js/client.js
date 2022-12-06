@@ -11,9 +11,16 @@ window.onload = function () {
     {keywordSubmitted : keyword},
    // if we get a response from the server .... 
     function(response) {
-       console.log("responsed received from server:" + response);
-       displayItem(response[0]);
-       displayCompany(response[1]);
+       console.log("Mission was aborted:" + response[0]);
+       if (response[0]) {
+        let error = "Sorry, couldn't find anything. Try again."
+        console.log(error);
+        displayErrorMessage(error);
+       }
+       else {
+        displayItem(response[1]);
+        displayCompany(response[2]);
+       }
   })
 });//click
 
@@ -26,9 +33,17 @@ window.onload = function () {
       {UPCsubmitted : UPCcode},
      // if we get a response from the server .... 
       function(response) {
-        console.log("responsed received from server:" + response);
-         displayItem(response[0]);
-         displayCompany(response[1]);
+        
+        console.log("Mission was aborted:" + response[0]);
+        if (response[0]) {
+          let error = "Sorry, couldn't find anything. Try again."
+          console.log(error);
+          displayErrorMessage(error);
+        }
+        else {
+          displayItem(response[1]);
+          displayCompany(response[2]);
+        }
   })
 });//click
 
@@ -39,6 +54,11 @@ $('.togglable').click(function() {
   $(this).parent().children('div').toggle(1000);
 });
 };
+
+function displayErrorMessage(err) {
+  $('#error-spot').empty();
+  $('#error-spot').append('<p class="--Inter-Regular">' + err + '</p>');
+}
 
 function verifyLink() {
   let links = document.getElementsByClassName('to-format-link');
@@ -67,7 +87,7 @@ function verifyListDisplay() {
     //Starting at the second split element, insert each as a 'li'
     for (let j = 1; j < elements.length; j++) {    
       let li = document.createElement("li");
-      li.classList.add("--Inter-Regular");
+      li.classList.add("--Inter-Black");
       li.classList.add("subtext");
       li.textContent = elements[j].trim();
       parasToFormat[i].parentElement.append(li);
@@ -112,6 +132,7 @@ function displayItem(item) {
 
 function displayCompany(company) {
   console.log(company);
+  $('#error-spot').empty();
 
   //PROFILE + FINANCIAL PROFILE
   // if (company.financials.symbol != "" || company.financials.symbol != undefined) {

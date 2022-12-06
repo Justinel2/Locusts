@@ -49,6 +49,7 @@ let companyKeyword;
 let manufacturer;
 let foundCoFromBrand;
 let manufacturerAvailable;
+let abortMission;
 
 
 //---- Connection to db
@@ -108,6 +109,7 @@ async function handleGetProfileByKeyword (request,response,next){
 
   //Construct an object to pass the item and the company objects to the client
   let scannedResults = [
+    this.status = abortMission,
     this.item = newSearchedItem,
     this.company = newSearchedCompany
   ]
@@ -148,6 +150,7 @@ async function handleGetProfileByUPC (request,response,next){
 
     //Construct an object to pass the item and the company objects to the client
     let scannedResults = [
+      this.status = abortMission,
       this.item = newSearchedItem,
       this.company = newSearchedCompany
     ]
@@ -223,6 +226,8 @@ async function handleGetProfile(co) {
   //Redefine our research indicators to false
   foundCoFromBrand = false;
   manufacturerAvailable = false;
+  abortMission = false;
+
 
   //Keyword passed from the previous query
   console.log("find company information from: " + co);
@@ -250,19 +255,20 @@ async function handleGetProfile(co) {
       newSearchedCompany.name = newSearchedItem.motherCo;
     }
     //If there was no result from the manufacturer -> research stops here
-    else {
+    else if (companyKeyword === "undefined"){
       console.log("NO LUCK HERE");
-      response.send("data was able to be retrieved from the information given.");
+      abortMission = true;
     }
   }
   //If there was no result from brand and no manufacturer available -> research stops here
   else {
     console.log("NO LUCK HERE");
-    response.send("No data was able to be retrieved from the information given.");
+    abortMission = true;
+
   }
 
   //If we have a company name
-  if (newSearchedCompany.name != undefined) {
+  if (abortMission != true) {
     
     //Get the market symbol to find the financial data
     newSearchedCompany.financials.symbol = await getMarketSymbol(newSearchedItem.motherCo);
@@ -360,9 +366,10 @@ function getMotherCompany (q) {
       }
       //If the infobox is undefined
       else {
-        console.log("infobox is not defined");
+        // console.log("infobox is not defined");
         //No information can be retrieved from this keyword
-        reject("Infobox is undefined for this page - cannot retrieve information");
+        console.log("Infobox is undefined for this page - cannot retrieve information");
+        resolve("undefined");
       }
     },2000);
   }) 

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DATA AND MONGO</title>
+    <title>CHECKOUT APP</title>
 
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
@@ -32,16 +32,17 @@
       </div>
           <div id="container-search" class="active">
             <div><h1 class="--Neue-Mentana-Regular">SEARCH</h1></div>
+            <div id="error-spot"></div>
             <div id="container-inner-part-top" class="sub-container">
                 <h2 class="--Inter-Black">BY BRAND</h2>
                 <p class="--Inter-Regular">Enter a brand or company name in the research bar below to search through the different databases.</p>
-                <input type="text" id="searchCritKeyword" value="type here" class="--Inter-Regular"/>
+                <input type="text" id="searchCritKeyword" placeholder="type here" value = "" class="--Inter-Regular"/>
                 <input type="button" value="Search by Keyword" id="findDataWithKeyword" class="--Inter-Regular"/>
             </div>
             <div id="container-inner-part-bottom" class="sub-container">
                 <h2 class="--Inter-Black">BY UPC CODE</h2>
                 <p class="--Inter-Regular">Enter the number located under the barcode of a grocery store item (between 12 and 13 numbers) manually in the research bar below.</p>
-                <input type="text" id="searchCritUPC" value="type here" class="--Inter-Regular"/>
+                <input type="text" id="searchCritUPC" placeholder="type here" value = "" class="--Inter-Regular"/>
                 <input type="button" value="Search by UPC Code" id="findDataWithUPC" class="--Inter-Regular"/>
             </div>
           </div>
