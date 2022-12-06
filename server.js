@@ -41,6 +41,11 @@ const e = require("express");
 let newSearchedItem = new Item();
 let newSearchedCompany = new Company();
 let dbOpened = false;
+let foundBrandFromUPC;
+let companyKeyword;
+let manufacturer;
+let foundCoFromBrand;
+let manufacturerAvailable;
 
 
 //---- Connection to db
@@ -79,87 +84,60 @@ function handlePost(request,response){
 
 //HANDLE USER QUERY FROM BRAND
 async function handleGetProfileByKeyword (request,response,next){
-  let companyKeyword;
-  let manufacturer;
-  let foundCoFromBrand = false;
-  let foundCoFromManufacturer = false;
-  let manufacturerAvailable = false;
   
-  //Plug the brand entered by the user in the new item object
+  // Log keyword received from client
+  console.log("Keyword received from client: " + request.query.keywordSubmitted);
+  
+  // Plug the keyword entered by the user in the new item object
   newSearchedItem.brand = request.query.keywordSubmitted;
   console.log(newSearchedItem.brand);
 
-  //Get mother company from the brand 
-  companyKeyword = await getMotherCompany(newSearchedItem.brand);
-  
-  //If there was successful result from the brand, plug it in our
-  if (foundCoFromBrand === true) {
-    newSearchedItem.motherCo = companyKeyword;
-    newSearchedCompany.name = newSearchedItem.motherCo;
-  }
-  //If there is no result from the brand, try from the manufacturer if it is available
-  else if (foundCoFromBrand === false && manufacturerAvailable === true) {
-    manufacturer = companyKeyword;
-    companyKeyword = await getMotherCompany(manufacturer);
-    //If there was successful result from the manufacturer
-    if (foundCoFromManufacturer === true) {
-      newSearchedItem.motherCo = companyKeyword;
-      newSearchedCompany.name = newSearchedItem.motherCo;
-    }
-  }
+  let result = handleGetProfile(newSearchedItem.brand);
 
-
-  // //Plug that company name in the new company object
-  // newSearchedCompany.name = newSearchedItem.motherCo;
-  console.log(newSearchedCompany.name);
-  newSearchedCompany.financials.symbol = await getMarketSymbol(newSearchedItem.motherCo);
-  // console.log(newSearchedCompany.financials.symbol);
-  await getYHFinanceProfile(newSearchedCompany.financials.symbol);
-  await getYHFinanceFinancials(newSearchedCompany.financials.symbol);
-  // await getYHFinanceFinancials("PEP");
-  if (dbOpened) {
-    console.log("db opened")
-    await getPayrollRatio(newSearchedCompany.financials.symbol);
-    // await getPayrollRatio("PEP");
-    await getFoodAndAgricultureBenchmark(newSearchedCompany.name);
-  }
-
-  let scannedResults = [
-    this.item = newSearchedItem,
-    this.company = newSearchedCompany
-  ]
-  response.send(scannedResults);
+  response.send(result);
 }
 
 //HANDLE USER QUERY FROM UPC
 async function handleGetProfileByUPC (request,response,next){
-  let newSearchedItem = new Item();
+  // console.log(request.url);
+  foundBrandFromUPC = false;
 
-  console.log(request.url);
-  console.log(request.query.UPCsubmitted);
+  //Log UPC received from client
+  console.log("UPC received from client: " + request.query.UPCsubmitted);
 
-  // await getUPCPage(request.query.UPCsubmitted);
+  //Get product name, image and brand from UPC Code
+  let itemArgs = await getUPCPage(request.query.UPCsubmitted);
 
-  newSearchedItem.motherCo = await getMotherCompany(newSearchedItem.brand);
-  newSearchedCompany.name = newSearchedItem.motherCo;
-  console.log(newSearchedCompany.name);
-  newSearchedCompany.financials.symbol = await getMarketSymbol(newSearchedItem.motherCo);
-  // console.log(newSearchedCompany.financials.symbol);
-  await getYHFinanceProfile(newSearchedCompany.financials.symbol);
-  await getYHFinanceFinancials(newSearchedCompany.financials.symbol);
-  // await getYHFinanceFinancials("PEP");
-  if (dbOpened) {
-    console.log("db opened")
-    await getPayrollRatio(newSearchedCompany.financials.symbol);
-    // await getPayrollRatio("PEP");
-    await getFoodAndAgricultureBenchmark(newSearchedCompany.name);
+  if (foundBrandFromUPC) {
+    console.log(itemArgs[0] + ", " + itemArgs[1] + ", " + itemArgs[2] + ", ")
+    newSearchedItem.name = itemArgs[0];
+    newSearchedItem.brand = itemArgs[1];
+    newSearchedItem.imageURL = itemArgs[2];
+
+    let result = handleGetProfile(newSearchedItem.brand);
+    response.send(result);
+  
   }
+  // newSearchedItem.motherCo = await getMotherCompany(newSearchedItem.brand);
+  // newSearchedCompany.name = newSearchedItem.motherCo;
+  // console.log(newSearchedCompany.name);
+  // newSearchedCompany.financials.symbol = await getMarketSymbol(newSearchedItem.motherCo);
+  // // console.log(newSearchedCompany.financials.symbol);
+  // await getYHFinanceProfile(newSearchedCompany.financials.symbol);
+  // await getYHFinanceFinancials(newSearchedCompany.financials.symbol);
+  // // await getYHFinanceFinancials("PEP");
+  // if (dbOpened) {
+  //   console.log("db opened")
+  //   await getPayrollRatio(newSearchedCompany.financials.symbol);
+  //   // await getPayrollRatio("PEP");
+  //   await getFoodAndAgricultureBenchmark(newSearchedCompany.name);
+  // }
 
-  let scannedResults = [
-    this.item = newSearchedItem,
-    this.company = newSearchedCompany
-  ]
-  response.send(scannedResults);
+  // let scannedResults = [
+  //   this.item = newSearchedItem,
+  //   this.company = newSearchedCompany
+  // ]
+  // response.send(scannedResults);
 }
 
 function getUPCPage (upc) {  
@@ -173,45 +151,108 @@ function getUPCPage (upc) {
         gzip: true,
         body: "{ \"upc\": \""+ upc +"\" }",
       }, function (err, resp, body) {
-        // console.log('server encoded the data as: ' + (resp.headers['content-encoding'] || 'identity'))
-        // console.log('the decoded data is: ' + body)
         let entry = JSON.parse(body);
         if(entry.code === "INVALID_UPC") {
           let errorMessage = entry.message;
-          // console.log(errorMessage);
           reject(errorMessage);
         }
         else if (entry.items[0] === undefined) {
           reject("This UPC is not yet in the database.")
         }
         else {
-          // console.log(upc);
           // console.log(entry.items[0]);
           let productName = entry.items[0].title;
+          console.log("Product name: " + productName);
           let brand = entry.items[0].brand;
+          console.log("Brand: " + brand)
           let imageURL = entry.items[0].images[0];
-          // console.log(productName, brand, imageURL);
-          // let searchedItem = [productName, brand, imageURL];
-          // let searchedItem = new Item(productName, brand, imageURL);
-          newSearchedItem.name = productName;
-          newSearchedItem.brand = brand;
-          newSearchedItem.imageURL = imageURL;
-          // console.log(searchedItem);
-          resolve(newSearchedItem); 
+          console.log("ImageURL: " + imageURL);
+          let itemArgs = [productName, brand, imageURL];
+          foundBrandFromUPC = true;
+          resolve(itemArgs); 
         }
       })
     },2000);
   }) 
 }
 
-function getMotherCompany (brand) {  
+async function handleGetProfile(co) {
+  foundCoFromBrand = false;
+  manufacturerAvailable = false;
+
+  //Keyword passed from the previous query
+
+
+  //Get mother company from the brand 
+  companyKeyword = await getMotherCompany(newSearchedItem.brand);
+  console.log("data is in main loop: " + companyKeyword);
+  console.log("foundCoFromBrand= " + foundCoFromBrand);
+  console.log("manufacturerAvailable= " + manufacturerAvailable);
+  
+  //If there was successful result from the brand, plug it in our
+  if (foundCoFromBrand) {
+    console.log("company found from brand :)");
+    newSearchedItem.motherCo = companyKeyword;
+    newSearchedCompany.name = newSearchedItem.motherCo;
+  }
+  //If there is no result from the brand, try from the manufacturer if it is available
+  else if (!foundCoFromBrand && manufacturerAvailable) {
+    console.log("try to search with manufacturer");
+    manufacturer = companyKeyword;
+    companyKeyword = await getMotherCompany(manufacturer);
+    //If there was successful result from the manufacturer
+    if (companyKeyword != undefined) {
+      newSearchedItem.motherCo = companyKeyword;
+      newSearchedCompany.name = newSearchedItem.motherCo;
+    }
+    //If there was no result from the manufacturer -> research stops here
+    else {
+      console.log("NO LUCK HERE");
+      response.send("data was able to be retrieved from the information given.");
+    }
+  }
+  //If there was no result from brand and no manufacturer available -> research stops here
+  else {
+    console.log("NO LUCK HERE");
+    response.send("No data was able to be retrieved from the information given.");
+  }
+
+  //If we have a company name
+  if (newSearchedCompany.name != undefined) {
+    
+    //Get the market symbol to find the financial data
+    newSearchedCompany.financials.symbol = await getMarketSymbol(newSearchedItem.motherCo);
+    //Get company market profile
+    await getYHFinanceProfile(newSearchedCompany.financials.symbol);
+    //Get company financial information
+    await getYHFinanceFinancials(newSearchedCompany.financials.symbol);
+   
+    //If the database is opened
+    if (dbOpened) {
+      console.log("db opened")
+      //Get the payroll ratio (CEO:Worker)
+      await getPayrollRatio(newSearchedCompany.financials.symbol);
+      //Get the 'Food and Agriculture Benchmark' result for this company
+      await getFoodAndAgricultureBenchmark(newSearchedCompany.name);
+    }
+    
+    //Construct an object to pass the item and the company objects to the client
+    let scannedResults = [
+      this.item = newSearchedItem,
+      this.company = newSearchedCompany
+    ]
+}
+}
+
+function getMotherCompany (q) {  
   return new Promise((resolve,reject)=> {
     setTimeout(async ()=>{
-      let brandFormatted = brand.replace(' ', '_');
+      let qFormatted = q.replace(' ', '_');
       const wiki = new Wikiapi('en');
-      const page_data = await wiki.page(brandFormatted);
+      const page_data = await wiki.page(qFormatted);
       const parsed = page_data.parse();
 	    let infobox;
+      let result;
 	    parsed.each('template', template_token => {
 		    if (template_token.name.startsWith('Infobox')) {
 			    infobox = template_token.parameters;
@@ -221,31 +262,45 @@ function getMotherCompany (brand) {
           // reject();
         }
 	    });
-	    for (const [key, value] of Object.entries(infobox)){
-        infobox[key] = value.toString();
-      }
-	      // print json of the infobox
-        console.log(infobox);
+      if (infobox != undefined) {
+        console.log("infobox is defined");
+        for (const [key, value] of Object.entries(infobox)){
+          console.log(value);
+          infobox[key] = value.toString();
+        } 
+
+        // // print json of the infobox
+        // console.log(infobox);
         if(infobox.currentowner === undefined) {
+          console.log("no current owner parameter")
           if (infobox.owner != undefined) {
-            let owner = infobox.owner.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
-            resolve(owner);
+            foundCoFromBrand = true;
+            console.log("owner found under another syntax")
+            result = infobox.owner.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
+            resolve(result);
           }
           else if (infobox.manufacturer != undefined) {
-            console.log("owner is undefined, trying manufacturer");
-            let manufacturer = infobox.manufacturer.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
-            await getMotherCompanyFromManufacturer(manufacturer); 
-            resolve();
+            console.log("no owner available, but a manufacturer is listed")
+            manufacturerAvailable = true;
+            result = infobox.manufacturer.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
+            console.log("manufacturer: " + result);
           }
           else {
-            reject("No way to find out");
+            `reject("No way to find out");`
           }
         }
         else {
-          let owner = infobox.currentowner.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
-          resolve(owner);
+          console.log("company found directly from the brand");
+          foundCoFromBrand = true;
+          result = infobox.currentowner.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
         }
-        // resolve(owner);
+        console.log("data passed: " + result);
+        resolve(result);
+      }
+      else {
+        console.log("infobox is not defined");
+        reject("Infobox is undefined for this page - cannot retrieve information");
+      } result = infobox.owner.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
     },2000);
   }) 
 }
@@ -281,7 +336,7 @@ function getMotherCompany (brand) {
 function getMarketSymbol (company) {  
   return new Promise((resolve,reject)=> {
     setTimeout(async ()=>{
-      // console.log(company);
+      console.log("Searching market symbol of: " + company);
       const options = {
         method: 'GET',
         url: 'https://yh-finance.p.rapidapi.com/auto-complete',
