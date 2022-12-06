@@ -12,6 +12,7 @@ app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
 //CONNECTION TO CLIENT
 app.use("/searchManualUPC",handleGetProfileByUPC);
+app.use("/searchManualKeyword",handleGetProfileByKeyword);
 
 //Node Modules
 // var http = require('follow-redirects').http;
@@ -37,6 +38,7 @@ const { rejects } = require("assert");
 const e = require("express");
 
 //COMPANY PROFILE
+let newSearchedItem = new Item();
 let newSearchedCompany = new Company();
 let dbOpened = false;
 
@@ -48,13 +50,6 @@ db.once("open", async function(){
   
   console.log("are here");
   dbOpened = true;
-  // CanadianClimateModel.find({TOTAL_PRECIPITATION_CALGARY:"0.5"}).then((result)=>{
-    // console.log(result);
-  // });
-
-  // let resCount = await CanadianClimateModel.countDocuments({TOTAL_PRECIPITATION_CALGARY:"0.5"});
-  // console.log(resCount);
-
 })
 
 // make server listen for incoming messages
@@ -82,41 +77,89 @@ function handlePost(request,response){
   response.send("SUCCESS POST");
 }
 
-//EXAMPLE of  user making a query ... 10
-async function handleGetProfileByUPC (request,response,next){
-  let newSearchedItem = new Item();
+//HANDLE USER QUERY FROM BRAND
+async function handleGetProfileByKeyword (request,response,next){
+  let companyKeyword;
+  let manufacturer;
+  let foundCoFromBrand = false;
+  let foundCoFromManufacturer = false;
+  let manufacturerAvailable = false;
+  
+  //Plug the brand entered by the user in the new item object
+  newSearchedItem.brand = request.query.keywordSubmitted;
+  console.log(newSearchedItem.brand);
 
-  console.log(request.url);
-  console.log(request.query.UPCsubmitted);
-  // let results = await CanadianClimateModel.find({TOTAL_PRECIPITATION_CALGARY:request.query.UPCsubmitted});
-  // console.log(results[0]);
-  // response.send(results);
-//   let results = await request.get('https://api.upcitemdb.com/prod/trial/lookup/upc='+ request.query.UPCsubmitted, { json: true }, (err, res, body) => {
-//   if (err) { return console.log(err); }
-//   console.log(body.url);
-//   console.log(body.explanation);
-// });
-// console.log(results);
-  // let item =  await getUPCPage(request.query.UPCsubmitted);
-  // let company = await getMotherCompany(item.brand);
-  newSearchedItem.motherCo = await getMotherCompany("Gatorade");
-  newSearchedCompany.name = newSearchedItem.motherCo;
+  //Get mother company from the brand 
+  companyKeyword = await getMotherCompany(newSearchedItem.brand);
+  
+  //If there was successful result from the brand, plug it in our
+  if (foundCoFromBrand === true) {
+    newSearchedItem.motherCo = companyKeyword;
+    newSearchedCompany.name = newSearchedItem.motherCo;
+  }
+  //If there is no result from the brand, try from the manufacturer if it is available
+  else if (foundCoFromBrand === false && manufacturerAvailable === true) {
+    manufacturer = companyKeyword;
+    companyKeyword = await getMotherCompany(manufacturer);
+    //If there was successful result from the manufacturer
+    if (foundCoFromManufacturer === true) {
+      newSearchedItem.motherCo = companyKeyword;
+      newSearchedCompany.name = newSearchedItem.motherCo;
+    }
+  }
+
+
+  // //Plug that company name in the new company object
+  // newSearchedCompany.name = newSearchedItem.motherCo;
   console.log(newSearchedCompany.name);
   newSearchedCompany.financials.symbol = await getMarketSymbol(newSearchedItem.motherCo);
   // console.log(newSearchedCompany.financials.symbol);
   await getYHFinanceProfile(newSearchedCompany.financials.symbol);
   await getYHFinanceFinancials(newSearchedCompany.financials.symbol);
-  await getYHFinanceFinancials("PEP");
+  // await getYHFinanceFinancials("PEP");
   if (dbOpened) {
     console.log("db opened")
     await getPayrollRatio(newSearchedCompany.financials.symbol);
     // await getPayrollRatio("PEP");
     await getFoodAndAgricultureBenchmark(newSearchedCompany.name);
   }
-  // newSearchedItem.subsidiaries = await getSubsidiaries(newSearchedItem.motherCo);
-  // console.log(item);
-  // console.log(item.getItemStats());
-  response.send(newSearchedCompany);
+
+  let scannedResults = [
+    this.item = newSearchedItem,
+    this.company = newSearchedCompany
+  ]
+  response.send(scannedResults);
+}
+
+//HANDLE USER QUERY FROM UPC
+async function handleGetProfileByUPC (request,response,next){
+  let newSearchedItem = new Item();
+
+  console.log(request.url);
+  console.log(request.query.UPCsubmitted);
+
+  // await getUPCPage(request.query.UPCsubmitted);
+
+  newSearchedItem.motherCo = await getMotherCompany(newSearchedItem.brand);
+  newSearchedCompany.name = newSearchedItem.motherCo;
+  console.log(newSearchedCompany.name);
+  newSearchedCompany.financials.symbol = await getMarketSymbol(newSearchedItem.motherCo);
+  // console.log(newSearchedCompany.financials.symbol);
+  await getYHFinanceProfile(newSearchedCompany.financials.symbol);
+  await getYHFinanceFinancials(newSearchedCompany.financials.symbol);
+  // await getYHFinanceFinancials("PEP");
+  if (dbOpened) {
+    console.log("db opened")
+    await getPayrollRatio(newSearchedCompany.financials.symbol);
+    // await getPayrollRatio("PEP");
+    await getFoodAndAgricultureBenchmark(newSearchedCompany.name);
+  }
+
+  let scannedResults = [
+    this.item = newSearchedItem,
+    this.company = newSearchedCompany
+  ]
+  response.send(scannedResults);
 }
 
 function getUPCPage (upc) {  
@@ -138,7 +181,12 @@ function getUPCPage (upc) {
           // console.log(errorMessage);
           reject(errorMessage);
         }
+        else if (entry.items[0] === undefined) {
+          reject("This UPC is not yet in the database.")
+        }
         else {
+          // console.log(upc);
+          // console.log(entry.items[0]);
           let productName = entry.items[0].title;
           let brand = entry.items[0].brand;
           let imageURL = entry.items[0].images[0];
@@ -159,8 +207,9 @@ function getUPCPage (upc) {
 function getMotherCompany (brand) {  
   return new Promise((resolve,reject)=> {
     setTimeout(async ()=>{
+      let brandFormatted = brand.replace(' ', '_');
       const wiki = new Wikiapi('en');
-      const page_data = await wiki.page(brand);
+      const page_data = await wiki.page(brandFormatted);
       const parsed = page_data.parse();
 	    let infobox;
 	    parsed.each('template', template_token => {
@@ -176,8 +225,27 @@ function getMotherCompany (brand) {
         infobox[key] = value.toString();
       }
 	      // print json of the infobox
-        let owner = infobox.currentowner.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
-        resolve(owner);
+        console.log(infobox);
+        if(infobox.currentowner === undefined) {
+          if (infobox.owner != undefined) {
+            let owner = infobox.owner.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
+            resolve(owner);
+          }
+          else if (infobox.manufacturer != undefined) {
+            console.log("owner is undefined, trying manufacturer");
+            let manufacturer = infobox.manufacturer.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
+            await getMotherCompanyFromManufacturer(manufacturer); 
+            resolve();
+          }
+          else {
+            reject("No way to find out");
+          }
+        }
+        else {
+          let owner = infobox.currentowner.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
+          resolve(owner);
+        }
+        // resolve(owner);
     },2000);
   }) 
 }
@@ -270,7 +338,7 @@ function getYHFinanceProfile (symb) {
 
           newSearchedCompany.financials.keyExecutives[i] = entry.assetProfile.companyOfficers[i].name + ", " + entry.assetProfile.companyOfficers[i].title;
           if (entry.assetProfile.companyOfficers[i].totalPay != undefined) {
-            newSearchedCompany.financials.keyExecutives[i] += ", " + entry.assetProfile.companyOfficers[i].totalPay.fmt + " (" + entry.assetProfile.companyOfficers[i].fiscalYear + ")"
+            newSearchedCompany.financials.keyExecutives[i] += ", " + entry.assetProfile.companyOfficers[i].totalPay.fmt;
           }
           console.log(newSearchedCompany.financials.keyExecutives[i]);
         }
@@ -326,7 +394,8 @@ function getYHFinanceFinancials (symb) {
     async function getFoodAndAgricultureBenchmark (co) {  
       let upstream = false;
       let downstream = false;
-      let source = "Food and Agriculture Benchmark";
+      let source = "World Benchmarking Alliance";
+      let researchName = "Food and Agriculture Benchmark"
       let year = "2021";
       let nextAssessment = "2023";
       let govSubAreas = 3;
@@ -338,10 +407,10 @@ function getYHFinanceFinancials (symb) {
           console.log(result);
 
           //Create main blurb by subject
-          newSearchedCompany.govStrategies.push(new Blurb("MA1", await getLegend('MA1', "n"), result[0].MA1 + "/10", year, source, nextAssessment, ""));
-          newSearchedCompany.workersSocialInclusion.push(new Blurb("MA4", await getLegend('MA4', "n"), result[0].MA4 + "/30", year, source, nextAssessment, ""));
-          newSearchedCompany.environment.push(new Blurb("MA2", await getLegend('MA2', "n"), result[0].MA2 + "/30", year, source, nextAssessment, ""));
-          newSearchedCompany.nutrition.push(new Blurb("MA3", await getLegend('MA3', "n"), result[0].MA3 + "/30", year, source, nextAssessment, ""));
+          newSearchedCompany.govStrategies.push(new Blurb("MA1", await getLegend('MA1', "n"), result[0].MA1 + "/10", year, source, researchName, nextAssessment, ""));
+          newSearchedCompany.workersSocialInclusion.push(new Blurb("MA4", await getLegend('MA4', "n"), result[0].MA4 + "/30", year, source, researchName, nextAssessment, ""));
+          newSearchedCompany.environment.push(new Blurb("MA2", await getLegend('MA2', "n"), result[0].MA2 + "/30", year, source, researchName, nextAssessment, ""));
+          newSearchedCompany.nutrition.push(new Blurb("MA3", await getLegend('MA3', "n"), result[0].MA3 + "/30", year, source, researchName, nextAssessment, ""));
 
           //Check for upstream and downstream qualities of the company
           console.log(result[0].Agricultural_inputs);

@@ -29,28 +29,116 @@
               <a href="./pages/history.html"><div id="header-static-menu-history" class="box-center"><h1 class="--Neue-Mentana-Regular">History</h1></div></a>
           </div>
       </div>
-          <div id="container-search" class="hidden">
+          <div id="container-search" class="active">
             <div><h1 class="--Neue-Mentana-Regular">SEARCH</h1></div>
             <div id="container-inner-part-top" class="sub-container">
-                <h2 class="--Inter-Black">BY KEYWORD</h2>
+                <h2 class="--Inter-Black">BY BRAND</h2>
                 <p class="--Inter-Regular">Enter a brand or company name in the research bar below to search through the different databases.</p>
-                <input type="text" id="searchCompanyCrit" value="type here" class="--Inter-Regular"/>
-                <input type="button" value="Search by Keyword" id="findData" class="--Inter-Regular"/>
+                <input type="text" id="searchCritKeyword" value="type here" class="--Inter-Regular"/>
+                <input type="button" value="Search by Keyword" id="findDataWithKeyword" class="--Inter-Regular"/>
             </div>
             <div id="container-inner-part-bottom" class="sub-container">
                 <h2 class="--Inter-Black">BY UPC CODE</h2>
                 <p class="--Inter-Regular">Enter the number located under the barcode of a grocery store item (between 12 and 13 numbers) manually in the research bar below.</p>
-                <input type="text" id="searchCrit" value="type here" class="--Inter-Regular"/>
-                <input type="button" value="Search by UPC Code" id="findData" class="--Inter-Regular"/>
+                <input type="text" id="searchCritUPC" value="type here" class="--Inter-Regular"/>
+                <input type="button" value="Search by UPC Code" id="findDataWithUPC" class="--Inter-Regular"/>
             </div>
           </div>
           <div id="container-result" class="active">
-            <div id="container-result-item" class="flex">
-              <div></div>
-              <div></div>
+            <div id="container-result-item">
+              <div id ="container-result-item-review" class="flex">
+                <div id="container-result-item-thumbnail">
+                  <img id="item-image" src="../images/grocery.jpg" alt="">
+                </div>
+                <div id="container-result-item-description">
+                  <h2 class="--Inter-Black">SCANNED</h2>
+                  <p class="--Inter-Regular" id="product-name">No product found</p>
+                  <p class="--Inter-Regular" id="product-company">No company found</p>
+                </div>
+              </div>
+              <div id="container-result-item-decision" class="flex">
+                <div id="container-result-item-decision-buy"><h2 class="--Inter-Black">BUY</h2></div>
+                <div id="container-result-item-decision-pass"><h2 class="--Inter-Black">PASS</h2></div>
+              </div>
             </div>
             <div id="container-result-company">
-
+              <h1 id="container-result-company-name" class="--Neue-Mentana-Bold">No company found</h1>
+              <div class="flex sub-sec">
+                <div class="seventy subtext">
+                  <p><span class="subtext">Sector: </span><span id="company-profile-sector"></span></p>
+                  <p><span class="subtext">Industry: </span><span id="company-profile-industry"></span></p>
+                  <p id="company-profile-nb-employees" class="subtext">Number of full-time employees:</p>
+                </div>
+                <div class="thirty">
+                  <p id="company-address-1" class="subtext">Adress Line 1</p>
+                  <p id="comoany-address-2" class="subtext">Adress Line 2</p>
+                  <p id="company-address-3">Adress Line 3</p>
+                </div>
+              </div>
+              <div class="tab">
+                <div class="flex">
+                  <div class="eighty"><h2>FINANCIAL PROFILE</h2></div>
+                  <div class="twenty"><p id="concerned-financial-year">2021/TTM</p></div>
+                </div>
+                <div class="flex">
+                  <div class="seventy">
+                    <br>
+                    <p id="company-gross-revenue">Gross Revenue: </p>
+                    <p id="company-gross-profit">Gross Profit: </p>
+                  </div>
+                  <div class="thirty">
+                    <br>
+                    <p id="company-profit-margin">Profit margin: <span></span></p>
+                  </div>
+                </div>
+                <div class="sub-sec">
+                    <p id="company-median-salary">Median Salary: </p>
+                    <p id="company-salary-ratio">The CEO makes <span></span> times more than the median employee salary.</p>
+                </div>
+                <div id="company-key-executives" class="sub-sec subtext">
+                  <p class="--Inter-Black">Key Executives, annual salary</p>
+                </div>
+              </div>
+              <div id="tab-governance" class="tab">
+                <h2>GOVERNANCE AND MANAGEMENT +</h2>
+                <div id="tab-governance-content" class="active">
+                  <!-- <div class="new-resource">
+                    <div class="flex">
+                      <div class="eighty">
+                        <p class="subtext">Assessment from the Organization bla bla bla</p>
+                        <p>Name of the study</p>
+                      </div>
+                      <div class="twenty"><p>2021</p></div>
+                    </div>
+                    <div class="flex">
+                      <div class="eighty"><p class="--Inter-Black">Title of the Criteria Studied +</p></div>
+                      <div class="twenty">
+                        <p>score</p>
+                      </div>
+                    </div>
+                    <div class="sub-blurb active">
+                      <div class="flex">
+                        <div class="eighty"><p class="--Inter-Black">Sub Criteria +</p></div>
+                        <div class="twenty"><p>Score</p></div>
+                      </div>
+                      <div class="sub-blurb-details active">
+                        <p>Description if there is one</p>
+                        <div>
+                          <div>
+                            <p>Pros:</p>
+                            <p>Here are the pros</p>
+                          </div>
+                          <div>
+                            <p>Cons:</p>
+                            <p>Here are the cons</p>
+                          </div>
+                        </div>
+                        <p>See: <a href=""></a></p>
+                      </div>
+                    </div>
+                  </div> -->
+                </div>
+              </div>
             </div>
           </div>
     </div>
@@ -62,6 +150,23 @@
 
       .hidden {
         display:none;
+      }
+
+      p {
+        /* font-size: 12px; */
+        font-family: Inter;
+        font-weight: normal;
+        margin: 0;
+      }
+      
+      h2 {
+        font-family: Inter;
+        font-weight: bold;
+        margin: 0;
+      }
+
+      p.subtext, span.subtext {
+        font-size: 12px;
       }
 
       #container-search {
@@ -81,6 +186,53 @@
         padding: 16px 5% 0 0;
       }
 
+      .sub-sec, .tab{
+        margin-top: 10%;
+        margin-left: -5%;
+        padding-top: 2%;
+        padding-left: 5%;
+        padding-right: 10%;
+        width: 100%;
+      }
+
+      .tab {
+         background: 
+          radial-gradient(ellipse at 0% 0%, var(--beige) 18.06%, rgba(255,255,255,0) 81.25%) 0px 0px / 100% 100% no-repeat no-repeat;
+      }
+
+      .seventy {
+        width: 70%;
+      }
+
+      .eighty {
+        width: 80%;
+      }
+
+      .thirty {
+        width: 30%;
+        /* padding-left: 100px; */
+        text-align: right;
+      }
+
+      .twenty {
+        width: 20%;
+        text-align: right;
+      }
+
+      .new-resource {
+        padding-top: 3%;;
+      }
+
+      .sub-blurb {
+        padding-top: 2%;
+        padding-left: 5%;
+      }
+
+      .sub-blurb-details div{
+        padding-top: 2%;
+        padding-bottom: 2%;
+      }
+
       #container-inner-part-top {
         margin-top: 24px;
         background: 
@@ -95,7 +247,7 @@
       }
       
       #container-result {
-        height: 83vh;
+        height: 100%;
         background: 
           radial-gradient(ellipse at 0% 0%, var(--beige) 18.06%, rgba(255,255,255,0) 81.25%) 0px 0px / 100% 100% no-repeat no-repeat,
           radial-gradient(ellipse at 100% 0%, var(--yellow) 0%, var(--green) 80.56%) 0px 0px / 100% 100% no-repeat no-repeat;
@@ -103,13 +255,109 @@
 
       #container-result-item {
         background-color: var(--black);
-        height: 17vh;
+        height: 25vh;
+        flex-wrap: wrap;
+        /* position: relative; */
       }
 
-      #container-result-item div {
-        height: 100%;
-        width: 50%;
+      #container-result-item-review div {
+        height: 17vh;
+        /* background-color: aqua; */
+        
       }
+
+      #container-result-item-thumbnail {
+        display: flex;
+        width: 40%;
+        justify-content: center;
+        align-items: center;
+        /* padding: 2%; */
+      }
+
+      #container-result-item-thumbnail img {
+        width: 80%;
+        height: auto;
+      }
+
+      #container-result-item-description {
+        width: 60%;
+        color: var(--beige);
+        /* margin-left: 10px; */
+      }
+
+      #container-result-item-description h2 {
+        margin: 10% 0 0 7%;
+        margin-bottom: 0;
+      }
+
+      #container-result-item-description p {
+        margin: 7px 0 5px 7%;
+      }
+
+      #container-result-item-decision {
+        height: 8vh;
+        width: 100%;
+        /* background-color: antiquewhite; */
+      }
+
+      #container-result-item-decision div {
+        display: flex;
+        justify-content: center;
+        width: 50%;
+        /* padding: 0 10%; */
+      }
+
+      #container-result-item-decision-buy h2, #container-result-item-decision-pass h2 {
+        /* margin: 12.5% 40%; */
+        margin: 0;
+        padding-top: 3vh;
+      }
+
+      #container-result-item-decision-buy {
+        -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+        -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+        box-sizing: border-box;         /* Opera/IE 8+ */
+        /* position: relative; */
+        /* display: flex; */
+        margin: 0;
+        border-bottom: 8vh solid var(--green);
+        border-left: 0 solid transparent;
+        border-right: 15vw solid transparent;
+        height: 0;
+        width: 50vw;
+        padding-left: 7vw;
+        color: var(--black);
+        /* justify-content: center; */
+        /* align-items: center; */
+      }
+
+      #container-result-item-decision-pass {
+        -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+        -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+        box-sizing: border-box;         /* Opera/IE 8+ */
+        /* position: relative; */
+        margin: 0;
+        border-bottom: 8vh solid var(--red);
+        border-left: 15vw solid transparent;
+        border-right: 0 solid transparent;
+        height: 0;
+        width: 50vw;
+        padding-right: 7vw;
+        color: var(--beige);
+        /* justify-content: center; */
+      }
+
+      #container-result-company {
+        padding: 10% 5% 5% 5%;
+        line-height: 1.7;
+      }
+
+      /* #company-key-executives p {
+        padding-right: 20%;
+      } */
+
+
+
 
       </style>
   </body>

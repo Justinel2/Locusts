@@ -1,6 +1,6 @@
 class Item {
     constructor(name, brand, motherCo, imageURL) {
-      this.name = "";
+      this.name = "N/A";
       this.brand = "";
       this.motherCo = "";
       this.imageURL = "";
