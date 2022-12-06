@@ -29,17 +29,20 @@ const SubBlurb = require("./classes/SubBlurb");
 require("dotenv").config();
 const mongoose = require("mongoose");
 const url = process.env.MONGODB_URI;
-// console.log(url);
+//////Schemas
 const MedianWagesModel = require("./schemas/MedianWagesSchema.js");
 const FAABModel = require("./schemas/FAABSchema.js");
 const FAABLegendModel = require("./schemas/FAABLegendsSchema.js");
+
+
 const { resolve } = require("path");
 const { rejects } = require("assert");
 const e = require("express");
 
-//COMPANY PROFILE
+//OBJECTS
 let newSearchedItem = new Item();
 let newSearchedCompany = new Company();
+//STATUS VERIFICATION
 let dbOpened = false;
 let foundBrandFromUPC;
 let companyKeyword;
@@ -74,7 +77,7 @@ function clientRoute(req, res, next) {
 }
 
 /// use this VERB for getting posted data... 9
-app.post('/postForm',handlePost);
+// app.post('/postForm',handlePost);
  
 // the callback
 function handlePost(request,response){
@@ -82,7 +85,13 @@ function handlePost(request,response){
   response.send("SUCCESS POST");
 }
 
+//-------------------------------------------------------------------------------------------------------------------------------------
 //HANDLE USER QUERY FROM BRAND
+//Triggered by a button click on the client side's search page
+//Async function that communicate with the client side
+//Handles the request and the response to the client for a search on a company
+//profile by a keyword
+//
 async function handleGetProfileByKeyword (request,response,next){
   
   // Log keyword received from client
@@ -92,12 +101,20 @@ async function handleGetProfileByKeyword (request,response,next){
   newSearchedItem.brand = request.query.keywordSubmitted;
   console.log(newSearchedItem.brand);
 
+  //From the brand, try to get information about the mother company
   let result = handleGetProfile(newSearchedItem.brand);
 
+  //Send results to the client
   response.send(result);
 }
 
+//-------------------------------------------------------------------------------------------------------------------------------------
 //HANDLE USER QUERY FROM UPC
+//Triggered by a button click on the client side's search page
+//Async function that communicate with the client side
+//Handles the request and the response to the client for a search on a company
+//profile by a UPC
+//
 async function handleGetProfileByUPC (request,response,next){
   // console.log(request.url);
   foundBrandFromUPC = false;
@@ -108,41 +125,35 @@ async function handleGetProfileByUPC (request,response,next){
   //Get product name, image and brand from UPC Code
   let itemArgs = await getUPCPage(request.query.UPCsubmitted);
 
+  //If we could find information with the UPC
   if (foundBrandFromUPC) {
-    console.log(itemArgs[0] + ", " + itemArgs[1] + ", " + itemArgs[2] + ", ")
+    // console.log(itemArgs[0] + ", " + itemArgs[1] + ", " + itemArgs[2] + ", ")
+    //Plug the product name, brand and image url in the new item object
     newSearchedItem.name = itemArgs[0];
     newSearchedItem.brand = itemArgs[1];
     newSearchedItem.imageURL = itemArgs[2];
 
+    //From the brand, try to get information about the mother company
     let result = handleGetProfile(newSearchedItem.brand);
+
+    //Send results to the client
     response.send(result);
   
   }
-  // newSearchedItem.motherCo = await getMotherCompany(newSearchedItem.brand);
-  // newSearchedCompany.name = newSearchedItem.motherCo;
-  // console.log(newSearchedCompany.name);
-  // newSearchedCompany.financials.symbol = await getMarketSymbol(newSearchedItem.motherCo);
-  // // console.log(newSearchedCompany.financials.symbol);
-  // await getYHFinanceProfile(newSearchedCompany.financials.symbol);
-  // await getYHFinanceFinancials(newSearchedCompany.financials.symbol);
-  // // await getYHFinanceFinancials("PEP");
-  // if (dbOpened) {
-  //   console.log("db opened")
-  //   await getPayrollRatio(newSearchedCompany.financials.symbol);
-  //   // await getPayrollRatio("PEP");
-  //   await getFoodAndAgricultureBenchmark(newSearchedCompany.name);
-  // }
-
-  // let scannedResults = [
-  //   this.item = newSearchedItem,
-  //   this.company = newSearchedCompany
-  // ]
-  // response.send(scannedResults);
 }
 
-function getUPCPage (upc) {  
+//-------------------------------------------------------------------------------------------------------------------------------------
+//GET INFORMATION ABOUT ITEM FROM UPC
+//Called from the function handleGetProfilebyUPC
+//Request to UpCiteUPC API 
+//If data is found in their database for this UPC, we can obtain the:
+//Item name, brand and image link
+//
+function getUPCPage (upc) { 
+  //Promise with a timeout 
   return new Promise((resolve,reject)=> {
     setTimeout(()=>{
+      //Request module makes a request to the UPCitemDB with the UPC code entered by the user
       request.post({
         uri: 'https://api.upcitemdb.com/prod/trial/lookup',
         headers: {
@@ -150,17 +161,25 @@ function getUPCPage (upc) {
         },
         gzip: true,
         body: "{ \"upc\": \""+ upc +"\" }",
+        //Handle the response from the API
       }, function (err, resp, body) {
+        //Parse the API response so it is easier to manipulate
         let entry = JSON.parse(body);
+        //If the code entered return as an invalid UPC, reject the promise with the API error message
+        //in that case, it is the user that has to enter a valid UPC (it is not because they do not have this one in the db)
         if(entry.code === "INVALID_UPC") {
           let errorMessage = entry.message;
+          console.log("The UPC entered is invalid. Please try again.")
           reject(errorMessage);
         }
+        //If the UPC is valid no information is returned from UPCitemDB
         else if (entry.items[0] === undefined) {
           reject("This UPC is not yet in the database.")
         }
+        //If the API returns information about this UPC
         else {
           // console.log(entry.items[0]);
+          //Plug and log the values for the product name, brand and image URL
           let productName = entry.items[0].title;
           console.log("Product name: " + productName);
           let brand = entry.items[0].brand;
@@ -168,7 +187,9 @@ function getUPCPage (upc) {
           let imageURL = entry.items[0].images[0];
           console.log("ImageURL: " + imageURL);
           let itemArgs = [productName, brand, imageURL];
+          //Indicate that the brand was found from the UPC
           foundBrandFromUPC = true;
+          //Resolve the promise with an array of the information retrieved
           resolve(itemArgs); 
         }
       })
@@ -176,12 +197,19 @@ function getUPCPage (upc) {
   }) 
 }
 
+//-------------------------------------------------------------------------------------------------------------------------------------
+//GET INFORMATION ABOUT THE MOTHER COMPANY FROM THE BRAND (OR ANOTHER KEYWORD)
+//Called by both the handleGetProfileByUPC and the handleGetProfileByKeyword when they have the same information
+//Async function that orchestrate the rest of the requests to API and retrieve in my database
+//The result is what will then be communicated with the client through the handleGetProfileByUPC or the handleGetProfileByKeyword
+//
 async function handleGetProfile(co) {
+  //Redefine our research indicators to false
   foundCoFromBrand = false;
   manufacturerAvailable = false;
 
   //Keyword passed from the previous query
-
+  console.log("find company information from: " + co);
 
   //Get mother company from the brand 
   companyKeyword = await getMotherCompany(newSearchedItem.brand);
@@ -241,18 +269,27 @@ async function handleGetProfile(co) {
       this.item = newSearchedItem,
       this.company = newSearchedCompany
     ]
+    result(scannedResults);
 }
 }
 
+//-------------------------------------------------------------------------------------------------------------------------------------
+//GET THE MOTHER COMPANY OF THE BRAND
+//Called from the function handleGetProfile
+//Request the wiki databse through the wiki API module
+//
 function getMotherCompany (q) {  
   return new Promise((resolve,reject)=> {
     setTimeout(async ()=>{
+      //Replace any spaces from the query string to underscores to fit the wiki format for pages
       let qFormatted = q.replace(' ', '_');
+      //
       const wiki = new Wikiapi('en');
       const page_data = await wiki.page(qFormatted);
       const parsed = page_data.parse();
 	    let infobox;
       let result;
+      //Parse the infobox template 
 	    parsed.each('template', template_token => {
 		    if (template_token.name.startsWith('Infobox')) {
 			    infobox = template_token.parameters;
@@ -262,81 +299,75 @@ function getMotherCompany (q) {
           // reject();
         }
 	    });
+      //If the infobox is defined
       if (infobox != undefined) {
         console.log("infobox is defined");
+        //Stringify each of the infobox values
         for (const [key, value] of Object.entries(infobox)){
           console.log(value);
           infobox[key] = value.toString();
         } 
-
         // // print json of the infobox
         // console.log(infobox);
+        // If the key 'currentowner' is not defined in this infobox
         if(infobox.currentowner === undefined) {
           console.log("no current owner parameter")
+          //But there is a key 'owner' defined
           if (infobox.owner != undefined) {
+            //Indicate that the mother company has been found
             foundCoFromBrand = true;
             console.log("owner found under another syntax")
+            //Plug the value without the brackets as a result
             result = infobox.owner.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
-            resolve(result);
           }
+          //If there is also no key 'owner' defined, but there is a key 'manufacturer'
           else if (infobox.manufacturer != undefined) {
             console.log("no owner available, but a manufacturer is listed")
+            //Indicate that a manufacturer has been found
             manufacturerAvailable = true;
+            //Plug the value without the brackets as a result
             result = infobox.manufacturer.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
             console.log("manufacturer: " + result);
           }
+          //++++++++++++++
           else {
             `reject("No way to find out");`
           }
         }
         else {
+          //If the key 'currentowner' is available
           console.log("company found directly from the brand");
+          //Indicate that the mother company has been found
           foundCoFromBrand = true;
+          //Plug the value without the brackets as a result
           result = infobox.currentowner.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
         }
+        //Log in the value found
         console.log("data passed: " + result);
+        //Resolve this value
         resolve(result);
       }
+      //If the infobox is undefined
       else {
         console.log("infobox is not defined");
+        //No information can be retrieved from this keyword
         reject("Infobox is undefined for this page - cannot retrieve information");
-      } result = infobox.owner.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
+      }
     },2000);
   }) 
 }
 
-// function getSubsidiaries(company) {
-//   setTimeout(async ()=>{
-//     const wiki = new Wikiapi('en');
-//     const page_data = await wiki.page(company);
-//     const parsed = page_data.parse();
-//     let infobox;
-//     parsed.each('template', template_token => {
-//       if (template_token.name.startsWith('Infobox')) {
-//         infobox = template_token.parameters;
-//       return parsed.each.exit;
-//       }
-//       else {
-//         // reject();
-//       }
-//     });
-//     for (const [key, value] of Object.entries(infobox)){
-//       infobox[key] = value.toString();
-//     }
-//       // print json of the infobox
-//       console.log(infobox);
-//       // let owner = infobox.currentowner.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
-//       if (infobox.subsid != undefined) {
-        
-//       }
-//       resolve(owner);
-//   },2000);
-// }
-
-function getMarketSymbol (company) {  
+//-------------------------------------------------------------------------------------------------------------------------------------
+//GET THE MARKET SYMBOL OF THE COMPANY FROM THE COMPANY NAME
+//Called from the function handleGetProfile
+//Requests the YH Finance API - key registered through Rapid API
+//Resolves void
+//
+function getMarketSymbol (company) {
   return new Promise((resolve,reject)=> {
     setTimeout(async ()=>{
       console.log("Searching market symbol of: " + company);
+      //Defines the options for the request
       const options = {
         method: 'GET',
         url: 'https://yh-finance.p.rapidapi.com/auto-complete',
@@ -348,22 +379,32 @@ function getMarketSymbol (company) {
           useQueryString: true
         }
       };
-      
+      //Request the API with the option defined earlier
       request(options, function (error, response, body) {
+        //If there is an erreur -> new error
         if (error) throw new Error(error);
         // console.log(body);
+        //Else, parse the results
         let entry = JSON.parse(body);
+        //Get the market symbol from the results
         let symbol = entry.quotes[0].symbol;
-        // console.log(entry.quotes[0].symbol);
+        //Resolve the market symbol
         resolve(symbol);
       });
     },2000);
   }) 
 }
 
+//-------------------------------------------------------------------------------------------------------------------------------------
+//GET THE COMPANY PROFILE INFORMATION FROM THE MARKET SYMBOL OF THE COMPANY
+//Called from the function handleGetProfile
+//Requests the YH Finance API - key registered through Rapid API
+//Resolves void
+//
 function getYHFinanceProfile (symb) {  
   return new Promise((resolve,reject)=> {
     setTimeout(async ()=>{
+      //Defines the options for the request
       const options = {
         method: 'GET',
         url: 'https://yh-finance.p.rapidapi.com/stock/v2/get-profile',
@@ -374,13 +415,15 @@ function getYHFinanceProfile (symb) {
           useQueryString: true
         }
       };
-      
+      //Request the API with the option defined earlier
       request(options, function (error, response, body) {
+        //If there is an erreur -> new error
         if (error) throw new Error(error);
-      
+        //Parse the result
         let entry = JSON.parse(body);
         // console.log(entry);
-        //PROFILE
+
+        //PLUG COMPANY PROFILE INFO IN THE COMPANY OBJECT
         newSearchedCompany.profile.sector = entry.assetProfile.sector;
         newSearchedCompany.profile.industry = entry.assetProfile.industry;
         newSearchedCompany.profile.employeesNb = entry.assetProfile.fullTimeEmployees;
@@ -388,7 +431,7 @@ function getYHFinanceProfile (symb) {
         newSearchedCompany.profile.address[1] = entry.assetProfile.city + ", " + entry.assetProfile.state + " " + entry.assetProfile.zip;
         newSearchedCompany.profile.address[2] = entry.assetProfile.country;
 
-        //FIANCIALS (KEY EXECUTIVES)
+        //PLUG COMPANY FIANCIAL PROFILE (KEY EXECUTIVES) IN THE COMPANY OBJECT
         for (let i = 0; i < entry.assetProfile.companyOfficers.length; i++) {
 
           newSearchedCompany.financials.keyExecutives[i] = entry.assetProfile.companyOfficers[i].name + ", " + entry.assetProfile.companyOfficers[i].title;
@@ -397,16 +440,22 @@ function getYHFinanceProfile (symb) {
           }
           console.log(newSearchedCompany.financials.keyExecutives[i]);
         }
-
-
+        //Resolve an empty response (void)
         resolve();
       });
     },2000);
   }) 
 }
 
+//-------------------------------------------------------------------------------------------------------------------------------------
+//GET THE COMPANY FINANCIAL INFORMATION FROM THE MARKET SYMBOL OF THE COMPANY
+//Called from the function handleGetProfile
+//Requests the YH Finance API - key registered through Rapid API
+//Resolves void
+//
 function getYHFinanceFinancials (symb) {  
   return new Promise((resolve,reject)=> {
+    //Defines the options for the request
     const options = {
       method: 'GET',
       url: 'https://yh-finance.p.rapidapi.com/stock/v2/get-financials',
@@ -417,38 +466,58 @@ function getYHFinanceFinancials (symb) {
         useQueryString: true
       }
     };
-      
+      //Request the API with the option defined earlier
       request(options, function (error, response, body) {
+        //If there is an erreur -> new error
         if (error) throw new Error(error);
-      
+        //Parse the result
         let entry = JSON.parse(body);
-        //GROSS REVENUE
+
+        //PLUG COMPANY GROSS REVENUE, GROSS PROFIT AND CALCULATE THE PROFIT MARGIN (AND PLUG IT) IN THE COMPANY OBJECT
         newSearchedCompany.financials.grossRevenue = entry.timeSeries.trailingTotalRevenue[0].reportedValue.fmt;
         newSearchedCompany.financials.grossProfit = entry.timeSeries.trailingGrossProfit[0].reportedValue.fmt;
         newSearchedCompany.financials.profitMargin = newSearchedCompany.financials.getProfitMargin();
 
-        console.log(newSearchedCompany.financials.grossRevenue + ", " + newSearchedCompany.financials.grossProfit + ", profit margin of: " + newSearchedCompany.financials.profitMargin);
+        // console.log(newSearchedCompany.financials.grossRevenue + ", " + newSearchedCompany.financials.grossProfit + ", profit margin of: " + newSearchedCompany.financials.profitMargin);
 
+        //Resolve an empty response (void)
         resolve();
       });
     },2000);
   } 
 
+//-------------------------------------------------------------------------------------------------------------------------------------
+//GET THE COMPANY MEDIAN SALARY AND CEO:WORKER PAYROLL RATIO FROM THE COMPANY MARKET SYMBOL
+//Called from the function handleGetProfile
+//Accesses my MongoDB, where I manually added the info from AFLCIO
+//Resolves void
+//
   async function getPayrollRatio (symb) {  
     return new Promise((resolve,reject)=> {
+      //Find the company entry withthe market symbol
       MedianWagesModel.find({Ticker:symb}).then((result)=> {
-        console.log(result[0].Median_Worker_Pay);
+        // console.log(result[0].Median_Worker_Pay);
+        //PLUG IN THE MEDIAN PAY, THE RATIO AND THE FISCAL YEAR IN THE COMPANY OBJECT
         newSearchedCompany.financials.medianWorkerPayroll = result[0].Median_Worker_Pay;
         newSearchedCompany.financials.payrollRatio = result[0].Pay_Ratio;
         newSearchedCompany.financials.fiscalYear = result[0].Fiscal_Year;
+        //Resolve an empty response (void)
         resolve();
       });
       },2000);
     } 
 
+//-------------------------------------------------------------------------------------------------------------------------------------
+//GET COMPANY HABITS INFO FROM COMPANY NAME: FOOD AND AGRICULTURE BENCHMARK 
+//Called from the function handleGetProfile
+//Accesses my MongoDB, where I imported the CSV data results from the World Benchmarking Alliance website and manual
+//Resolves void
+//
     async function getFoodAndAgricultureBenchmark (co) {  
+      //Declare company specs variables by default
       let upstream = false;
       let downstream = false;
+      //Declare and define the static variables about this study
       let source = "World Benchmarking Alliance";
       let researchName = "Food and Agriculture Benchmark"
       let year = "2021";
@@ -457,11 +526,13 @@ function getYHFinanceFinancials (symb) {
       let workersSubAreas = 24;
       let environmentSubAreas = 12;
       let nutritionSubAreas = 6;
+
       return new Promise((resolve,reject)=> {
-        FAABModel.find({Company_name:"PepsiCo"}).then(async (result)=> {
+        //Find the company entry with the company name
+        FAABModel.find({Company_name:co}).then(async (result)=> {
           console.log(result);
 
-          //Create main blurb by subject
+          //Create main blurb objects by subject
           newSearchedCompany.govStrategies.push(new Blurb("MA1", await getLegend('MA1', "n"), result[0].MA1 + "/10", year, source, researchName, nextAssessment, ""));
           newSearchedCompany.workersSocialInclusion.push(new Blurb("MA4", await getLegend('MA4', "n"), result[0].MA4 + "/30", year, source, researchName, nextAssessment, ""));
           newSearchedCompany.environment.push(new Blurb("MA2", await getLegend('MA2', "n"), result[0].MA2 + "/30", year, source, researchName, nextAssessment, ""));
@@ -476,76 +547,64 @@ function getYHFinanceFinancials (symb) {
             downstream = true;
           }
 
-          //Create subBlurbsfor each mainBlurb
+          //Create subBlurbs for each mainBlurb
+
           //GOVERNANCE AND STRATEGY
           for (let i = 1; i <= govSubAreas; i++) {
             let id = "A" + i;
-            // console.log(id);
             let rating = result[0][id];
             let scoreLeg = rating.replace(',', '');
             let scoreDenominator = "2";
             let legend = await getLegend(id, ""); 
             newSearchedCompany.govStrategies[0].subBlurbs.push(new SubBlurb(id, legend.Name, rating + "/" + scoreDenominator, "", legend['Score' + scoreLeg + "_Pros"], legend['Score' + scoreLeg + "_Cons"]));
-            // console.log(newSearchedCompany.govStrategies[0]);
           }
 
           //WORKERS AND SOCIAL INCLUSION
           for (let i = 1; i <= workersSubAreas; i++) {
             let id = "D" + i;
-            // console.log(id);
             let rating = result[0][id];
             let scoreLeg = rating.replace(',', '');
             let scoreDenominator = "2";
             let legend = await getLegend(id, ""); 
-            // console.log(legend.Spec);
             if (legend.Spec === 'LIM') {
               scoreDenominator = "1";
             }
+            //INSTANTIANCE NEW SUB BLURBS IN EACH BLURB OBJECT
             newSearchedCompany.workersSocialInclusion[0].subBlurbs.push(new SubBlurb(id, legend.Name, rating + "/" + scoreDenominator, "", legend['Score' + scoreLeg + "_Pros"], legend['Score' + scoreLeg + "_Cons"]));
-            // console.log(newSearchedCompany.workersSocialInclusion[0]);
           }
+
           //ENVIRONMENT
           for (let i = 1; i <= environmentSubAreas; i++) {
             let id = "B" + i;
-            // console.log(id);
             let rating = result[0][id];
             let scoreLeg = rating.replace(',', '');
             let scoreDenominator = "2";
             let spec = 'DOWNSTREAM';
             let legend;
-            // console.log(legend.Spec);
             if (upstream) {
               spec = 'UPSTREAM';
             }
-            // console.log(upstream);
-            // console.log(spec);
             if (i >= 6 && i <= 8) {
               legend = await getLegendByStream(id, spec);
             }
             else {
               legend = await getLegend(id, "");
             }
-
-            // console.log(legend)
+            //INSTANTIANCE NEW SUB BLURBS IN EACH BLURB OBJECT
             newSearchedCompany.environment[0].subBlurbs.push(new SubBlurb(id, legend.Name, rating + "/" + scoreDenominator, "", legend['Score' + scoreLeg + "_Pros"], legend['Score' + scoreLeg + "_Cons"]));
-            // console.log(newSearchedCompany.environment[0]);
           }
 
           //NUTRITION
           for (let i = 1; i <= nutritionSubAreas; i++) {
             let id = "C" + i;
-            // console.log(id);
             let rating = result[0][id];
             let scoreLeg = rating.replace(',', '');
             let scoreDenominator = "2";
             let spec = 'UPSTREAM';
             let legend;
-            // console.log(legend.Spec);
             if (downstream) {
               spec = 'DOWNSTREAM';
             }
-            console.log(upstream);
-            console.log(spec);
             if (i <= 2) {
               legend = await getLegendByStream(id, spec);
             }
@@ -553,39 +612,48 @@ function getYHFinanceFinancials (symb) {
               legend = await getLegend(id, "");
             }
 
-            // console.log(legend)
+            //INSTANTIANCE NEW SUB BLURBS IN EACH BLURB OBJECT 
             newSearchedCompany.nutrition[0].subBlurbs.push(new SubBlurb(id, legend.Name, rating + "/" + scoreDenominator, "", legend['Score' + scoreLeg + "_Pros"], legend['Score' + scoreLeg + "_Cons"]));
-            // console.log(newSearchedCompany.nutrition[0]);
           }
 
-
-          // console.log(newSearchedCompany.govStrategies[0]);
-
-          // newSearchedCompany.compileResource(source, year, nextAssessment, result[0], upstream, downstream, legend);
-          // newSearchedCompany.govStrategies.push(new Blurb());
-          // newSearchedCompany.govStrategies.
-          // console.log(newSearchedCompany.govStrategies[0]);
           resolve();
         });
         },2000);
       } 
 
+//-------------------------------------------------------------------------------------------------------------------------------------
+//GET GRADING DEFINITION (LEGEND) FROM: FOOD AND AGRICULTURE BENCHMARK 
+//Searches in the db with the criteria code
+//Called from the function getFoodAndAgricultureBenchmark
+//Accesses my MongoDB, where I manually imported the notes and manual information from the World Benchmarking Alliance to interpret their data
+//
       async function getLegend (code, q) {  
         return new Promise((resolve,reject)=> {
           FAABLegendModel.find({Code:code}).then((result)=> {
             // console.log(result);
+            //If the query regards just the name
             if (q === "n") {
+              //Return the name of the criteria only
               resolve(result[0].Name);
             }
             else {
+              //Return the whole entry
               resolve(result[0])
             }
           });
           },2000);
         } 
+
+//-------------------------------------------------------------------------------------------------------------------------------------
+//GET GRADING DEFINITION (LEGEND) FROM: FOOD AND AGRICULTURE BENCHMARK 
+//Searches in the db with AND the company spec (upstream or downstream)
+//Called from the function getFoodAndAgricultureBenchmark
+//Accesses my MongoDB, where I manually imported the notes and manual information from the World Benchmarking Alliance to interpret their data
+//
         async function getLegendByStream (code, q) {  
           return new Promise((resolve,reject)=> {
             FAABLegendModel.find({Code:code, Spec:q}).then((result)=> {
+                //Resolve the whole entry
                 resolve(result[0])
             });
             },2000);
