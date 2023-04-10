@@ -10,24 +10,35 @@
     <link rel="stylesheet" type="text/css" href="../css/colors.css" />
     <link rel="stylesheet" type="text/css" href="../css/font.css" />
     <link rel="stylesheet" type="text/css" href="../css/cs-style.css" />
-
+    <script src="https://cdn.jsdelivr.net/npm/dynamsoft-javascript-barcode@9.0.2/dist/dbr.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/barcode-detection@0.4.0/dist/barcode-detector.umd.js"></script>
+    <script src="https://unpkg.com/eruda@2.4.1/eruda.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
- 
     <script src="../js/client.js"></script>
     <!-- <script src="../js/UI.js"></script> -->
   </head>
   <body>
-    <div>
+    <div id="loading-screen" class="hidden">
+      <p class="--Neue-Mentana-Bold">Hold On...</p>
+      <div id="loading-screen-gif"></div>
+      <p class="--Inter-Regular subtext">Searching:</p>
+      <p id="loading-screen-item" class="--Neue-Mentana-Regular"></p>
+    </div>
+    <div class="scanner home" id="startButton"></div>
+    <div id="fileInput"></div>
+    <div id="closeButton" class="camera"></div>
+    <div id="cameraSelect"></div>
       <div id="header" class="flex">
         <div class="left-flex">
           <div id="line-header"></div>
           <a href="../client.html"><div id="header-logo">
-            <img src="../images/checkout_logo.svg" alt="">
+            <!-- <img src="../images/checkout_logo.svg" alt=""> -->
+            <div></div>
           </div></a>
         </div>
           <div id="header-static-menu" class="right-flex z-front">
               <a href="./pages/account.html"><div id="header-static-menu-account" class="box-center"><h1 class="--Neue-Mentana-Regular">Account</h1></div></a>
-              <a href="./pages/history.html"><div id="header-static-menu-history" class="box-center"><h1 class="--Neue-Mentana-Regular">History</h1></div></a>
+              <a href="./pages/history.html"><div id="header-static-menu-about" class="box-center"><h1 class="--Neue-Mentana-Regular">About</h1></div></a>
           </div>
       </div>
           <div id="container-search" class="active">
@@ -46,7 +57,7 @@
                 <input type="button" value="Search by UPC Code" id="findDataWithUPC" class="--Inter-Regular"/>
             </div>
           </div>
-          <div id="container-result" class="active">
+          <div id="container-result" class="active hidden">
             <div id="container-result-item">
               <div id ="container-result-item-review" class="flex">
                 <div id="container-result-item-thumbnail">
@@ -63,40 +74,49 @@
                 <div id="container-result-item-decision-buy"><h2 class="--Inter-Black">BUY</h2></div>
                 <div id="container-result-item-decision-pass"><h2 class="--Inter-Black">PASS</h2></div>
               </div>
+              <div id="container-result-redo" onclick="handleRedo()">
+                <h2 class="--Inter-Black">NEW SEARCH</p>
+              </div>
             </div>
             <div id="container-result-company">
               <h1 id="container-result-company-name" class="--Neue-Mentana-Bold">No company found</h1>
               <div class="flex sub-sec">
                 <div class="seventy subtext">
-                  <p><span class="subtext">Sector: </span><span id="company-profile-sector"></span></p>
-                  <p><span class="subtext">Industry: </span><span id="company-profile-industry"></span></p>
-                  <p id="company-profile-nb-employees" class="subtext">Number of full-time employees:</p>
+                  <p><span class="subtext"></span><span id="company-profile-sector"></span></p>
+                  <p><span class="subtext"></span><span id="company-profile-industry"></span></p>
+                  <p id="company-profile-nb-employees">Number of full-time employees:</p>
                 </div>
                 <div class="thirty">
                   <p id="company-address-1" class="subtext">Adress Line 1</p>
-                  <p id="comoany-address-2" class="subtext">Adress Line 2</p>
+                  <p id="comoany-address-2" class="subtext">-</p>
                   <p id="company-address-3">Adress Line 3</p>
                 </div>
               </div>
-              <div class="tab">
+              <div id="company-financial-section" class="tab">
                 <div class="flex">
                   <div class="eighty"><h2>FINANCIAL PROFILE</h2></div>
-                  <div class="twenty"><p id="concerned-financial-year">2021/TTM</p></div>
+                  <div class="twenty"><p id="concerned-financial-year">2022/TTM</p></div>
                 </div>
                 <div class="flex">
                   <div class="seventy">
                     <br>
-                    <p id="company-gross-revenue">Gross Revenue: </p>
-                    <p id="company-gross-profit">Gross Profit: </p>
+                    <p class="subtext">Gross Revenue:</p>
+                    <p id="company-gross-revenue" class="--Neue-Mentana-Regular moderate"></p>
+                    <br>
+                    <p class="subtext">Gross Profit:</p>
+                    <p id="company-gross-profit" class="--Neue-Mentana-Regular moderate"></p>
                   </div>
                   <div class="thirty">
                     <br>
-                    <p id="company-profit-margin">Profit margin: <span></span></p>
+                    <p class="subtext">Profit margin: </p>
+                    <p id="company-profit-margin" class="--Neue-Mentana-Bold moderate"><span></span></p>
                   </div>
                 </div>
                 <div class="sub-sec">
-                    <p id="company-median-salary">Median Salary: </p>
-                    <p id="company-salary-ratio">The CEO makes <span></span> times more than the median employee salary.</p>
+                    <p id="company-median-salary-title">Median Salary:</p>
+                    <p id="company-median-salary" class="--Neue-Mentana-Regular moderate"></p>
+                    <br>
+                    <p id="company-salary-ratio"></p>
                 </div>
                 <div id="company-key-executives" class="sub-sec subtext">
                   <p class="--Inter-Black">Key Executives, annual salary</p>
@@ -129,13 +149,13 @@
                         <p>Description if there is one</p>
                         <div>
                           <div>
-                            <p>Pros:</p>
-                            <p class="to-format">The company: > Publicly states that workers shall not be required to work more than 48 hours in a regular work week or 60 hours including overtime. AND> States that all overtime work must be consensual and be paid at a premium rate. AND> Has a publicly available statement of policy that expects its business relationships to commit to respecting the health and safety of their workers. AND
+                            <p class="--Inter-Black green-title">PROS:</p>
+                            <p class="to-format pros">> Publicly states that workers shall not be required to work more than 48 hours in a regular work week or 60 hours including overtime. AND> States that all overtime work must be consensual and be paid at a premium rate. AND> Has a publicly available statement of policy that expects its business relationships to commit to respecting the health and safety of their workers. AND
                               > Has a public expectation that its business relationships shall not require workers to work more than 48 hours in a regular work week or 60 hours including overtime.</p>
                           </div>
                           <div>
-                            <p>Cons:</p>
-                            <p>The company: > Publicly states that workers shall not be required to work more than 48 hours in a regular work week or 60 hours including overtime. AND> States that all overtime work must be consensual and be paid at a premium rate. </p>
+                            <p class="--Inter-Black red-title">CONS:</p>
+                            <p class="to-format cons">> Publicly states that workers shall not be required to work more than 48 hours in a regular work week or 60 hours including overtime. AND> States that all overtime work must be consensual and be paid at a premium rate. </p>
                           </div>
                         </div>
                         <p>See: <a class="to-format-link" href="undefined">undefined</a></p>
@@ -147,19 +167,19 @@
 
               <!-- WORKERS TAB -->
               <div id="tab-workers" class="tab">
-                <h2 class="togglable">WORKERS AND SOCIAL</h2>
+                <h2 class="togglable">WORKERS AND SOCIAL +</h2>
                 <div id="tab-workers-content" class="hidden"></div>
               </div>
 
               <!-- ENVIRONMENT TAB -->
               <div id="tab-environment" class="tab">
-                <h2 class="togglable">ENVIRONMENT</h2>
+                <h2 class="togglable">ENVIRONMENT +</h2>
                 <div id="tab-environment-content" class="hidden"></div>
               </div>
 
               <!-- WORKERS TAB -->
               <div id="tab-nutrition" class="tab">
-                <h2 class="togglable">NUTRITION</h2>
+                <h2 class="togglable">NUTRITION +</h2>
                 <div id="tab-nutrition-content" class="hidden"></div>
               </div>
             </div>
@@ -202,8 +222,8 @@
         height: 83vh;
         padding: 10% 5% 5% 5%;
         background: 
-          radial-gradient(ellipse at 0% 0%, var(--beige) 18.06%, rgba(255,255,255,0) 81.25%) 0px 0px / 100% 100% no-repeat no-repeat,
-          radial-gradient(ellipse at 100% 0%, var(--yellow) 0%, var(--green) 80.56%) 0px 0px / 100% 100% no-repeat no-repeat;
+          radial-gradient(ellipse at 0% 0%, var(--white) 18.06%, rgba(255,255,255,0) 81.25%) 0px 0px / 100% 100% no-repeat no-repeat,
+          radial-gradient(ellipse at 100% 0%, var(--black) 0%, var(--black) 80.56%) 0px 0px / 100% 100% no-repeat no-repeat;
       }
 
       h1 {
@@ -225,8 +245,10 @@
       }
 
       .tab {
-         background: 
-          radial-gradient(ellipse at 0% 0%, var(--beige) 18.06%, rgba(255,255,255,0) 81.25%) 0px 0px / 100% 100% no-repeat no-repeat;
+         /* background: 
+          radial-gradient(ellipse at 0% 0%, var(--green) 18.06%, rgba(255,255,255,0) 81.25%) 0px 0px / 100% 100% no-repeat no-repeat; */
+          /* background-color: var(--green); */
+          cursor: pointer;
       }
 
       .seventy {
@@ -266,25 +288,26 @@
         margin-top: 24px;
         background: 
         /* linear-gradient(180deg, rgba(255,255,255,0), var(--black)), */
-        radial-gradient(ellipse at 75% 0%, var(--green) 1.06%, rgba(255,255,255,0) 50.25%) 0px 0px / 100% 100% no-repeat no-repeat;
+        radial-gradient(ellipse at 75% 0%, var(--white) 1.06%, rgba(255,255,255,0) 75%) 0px 0px / 100% 100% no-repeat no-repeat;
       }
 
       #container-inner-part-bottom {
         background: 
         /* linear-gradient(180deg, rgba(255,255,255,0), var(--black)), */
-        radial-gradient(ellipse at 75% 0%, var(--yellow) 1.06%, rgba(255,255,255,0) 50.25%) 0px 0px / 100% 100% no-repeat no-repeat;
+        radial-gradient(ellipse at 75% 0%, var(--white) 1.06%, rgba(255,255,255,0) 75%) 0px 0px / 100% 100% no-repeat no-repeat;
       }
       
       #container-result {
         height: 100%;
-        background: 
+        /* background: 
           radial-gradient(ellipse at 0% 0%, var(--beige) 18.06%, rgba(255,255,255,0) 81.25%) 0px 0px / 100% 100% no-repeat no-repeat,
-          radial-gradient(ellipse at 100% 0%, var(--yellow) 0%, var(--green) 80.56%) 0px 0px / 100% 100% no-repeat no-repeat;
+          radial-gradient(ellipse at 100% 0%, var(--yellow) 0%, var(--green) 80.56%) 0px 0px / 100% 100% no-repeat no-repeat; */
+        background-color: var(--white);
       }
 
       #container-result-item {
         background-color: var(--black);
-        height: 25vh;
+        height: 30vh;
         flex-wrap: wrap;
         /* position: relative; */
       }
@@ -310,7 +333,7 @@
 
       #container-result-item-description {
         width: 60%;
-        color: var(--beige);
+        color: var(--white);
         /* margin-left: 10px; */
       }
 
@@ -372,13 +395,53 @@
         height: 0;
         width: 50vw;
         padding-right: 7vw;
-        color: var(--beige);
+        color: var(--black);
         /* justify-content: center; */
+      }
+
+      #container-result-redo {
+        height: 20%;
+        display: flex;
+        /* align-content: center; */
+        align-items: center;
+        /* padding-top: 7%; */
+        justify-content: center;
+        background-color: var(--yellow);
+        color: var(--black);
+        border-top: solid 1px var(--black);
+        border-bottom: solid 2px var(--black);
+        cursor: pointer;
       }
 
       #container-result-company {
         padding: 10% 5% 5% 5%;
         line-height: 1.7;
+      }
+
+      #company-financial-section {
+        /* background-color: var(--grey); */
+        padding-top: 10%;
+        padding-bottom: 10%;
+        border-top: solid var(--black);
+        border-bottom: solid var(--black);
+      }
+
+      #company-profit-margin {
+       /* padding-right: 40px; */
+       margin-left: -40px;
+      }
+
+      .moderate {
+        font-size: 24px;
+      }
+
+      .pros li {
+        padding-left: 1rem;
+        text-indent: -0.7rem;
+      }
+
+      .pros li::before {
+        content: "🐻";
       }
 
       /* #company-key-executives p {

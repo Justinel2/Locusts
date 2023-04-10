@@ -1,8 +1,13 @@
 :root {
-    --yellow: #e0a654;
+    /* --yellow: #e0a654; */
     --beige: #d9d3b2;
     --black: #040507;
-    --green: #76b85d;
-    --red: #7a1e18;
+    /* --green: #76b85d; */
+    /* --red: #7a1e18; */
+    --white: #F2F2F2;
+    --grey: #8D98A6;
+    --green: #61A61C;
+    --red: #D91604;
+    --yellow: #F2790F;
   }
   

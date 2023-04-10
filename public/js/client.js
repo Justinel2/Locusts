@@ -39,6 +39,7 @@ window.onload = function () {
 
   var closeButton = document.querySelector("#closeButton");
   closeButton.onclick = function() {
+    console.log("STOP")
     stop();
     scannerContainer.style.display = "none";
     home.style.display = "";
@@ -58,7 +59,7 @@ window.onload = function () {
     }
 
     if (barcodeDetectorUsable === true) {
-      alert('Barcode Detector supported!');
+      // alert('Barcode Detector supported!');
     }else{
       alert('Barcode Detector is not supported by this browser, using the Dynamsoft Barcode Reader polyfill.');
       
@@ -179,6 +180,9 @@ window.onload = function () {
       if (barcodes.length != 0) {
         let UPCcode = barcodes;
         stop();
+        displayLoading(UPCcode[0]);
+        scannerContainer.style.display = "none";
+        home.style.display = "";
         // let detectedCode = UPCcode[0].rawValue;
         let formattedDetected;
         if (UPCcode[0].format === "upc_e") {
@@ -198,6 +202,9 @@ window.onload = function () {
         else if (UPCcode[0].format === "ean_13"){ 
           formattedDetected = UPCcode[0].rawValue;
         }
+        else {
+          formattedDetected = UPCcode[0].rawValue;
+        }
         console.log(formattedDetected);
         console.log("WE HAVE A RESPONSE: " + UPCcode[0].rawValue);
         $.get(
@@ -205,7 +212,7 @@ window.onload = function () {
           {UPCsubmitted : formattedDetected},
          // if we get a response from the server .... 
           function(response) {
-            
+            removeLoading();
             console.log("Mission was aborted:" + response[0]);
             if (response[0]) {
               let error = "Sorry, couldn't find anything. Try again."
@@ -267,18 +274,22 @@ window.onload = function () {
     console.log("click");
     let keyword = document.getElementById("searchCritKeyword").value;
     console.log(keyword);
+    displayLoading(keyword);
     $.get(
       "/searchManualKeyword",
       {keywordSubmitted : keyword},
     // if we get a response from the server .... 
       function(response) {
+        removeLoading();
         console.log("Mission was aborted:" + response[0]);
         if (response[0]) {
-          let error = "Sorry, couldn't find anything. Try again."
+          let error = response[response.length -1];
           console.log(error);
           displayErrorMessage(error);
         }
         else {
+          removeSearchPage();
+          displayResponse();
           displayItem(response[1]);
           displayCompany(response[2]);
         }
@@ -289,12 +300,13 @@ window.onload = function () {
   document.querySelector("#findDataWithUPC").addEventListener('click', function(event){
     console.log("click");
     let UPCcode = document.getElementById("searchCritUPC").value;
+    displayLoading(UPCcode);
     $.get(
       "/searchManualUPC",
       {UPCsubmitted : UPCcode},
      // if we get a response from the server .... 
       function(response) {
-        
+        removeLoading();
         console.log("Mission was aborted:" + response[0]);
         if (response[0]) {
           let error = "Sorry, couldn't find anything. Try again."
@@ -302,6 +314,8 @@ window.onload = function () {
           displayErrorMessage(error);
         }
         else {
+          removeSearchPage();
+          displayResponse();
           displayItem(response[1]);
           displayCompany(response[2]);
         }
@@ -315,6 +329,47 @@ $('.togglable').click(function() {
   $(this).parent().children('div').toggle(1000);
 });
 };
+
+function handleRedo() {
+  console.log("redo");
+  displaySearchPage();
+  removeResponse();
+
+}
+
+function displayLoading(e){
+  let loadingPage = document.getElementById('loading-screen');
+  let loadingInfo = document.getElementById('loading-screen-item');
+  loadingPage.classList.remove('hidden');
+  loadingInfo.textContent = e;
+  $('body').bind('touchmove', function(e){e.preventDefault()})
+}
+
+function removeLoading(){
+  let loadingPage = document.getElementById('loading-screen');
+  loadingPage.classList.add('hidden');
+  $('body').unbind('touchmove')
+}
+
+function displaySearchPage(){
+  let searchPage = document.getElementById('container-search');
+  searchPage.classList.remove('hidden');
+}
+
+function removeSearchPage(){
+  let searchPage = document.getElementById('container-search');
+  searchPage.classList.add('hidden');
+}
+
+function displayResponse(){
+  let searchPage = document.getElementById('container-result');
+  searchPage.classList.remove('hidden');
+}
+
+function removeResponse(){
+  let searchPage = document.getElementById('container-result');
+  searchPage.classList.add('hidden');
+}
 
 function displayErrorMessage(err) {
   $('#error-spot').empty();
@@ -337,6 +392,7 @@ function verifyListDisplay() {
   for (let i = 0; i < parasToFormat.length; i++) {
     let string = String(parasToFormat[i].textContent);
     string.replace("undefined", "Nothing pointed out by the study");
+    string.replace("The company:", "");
 
     //split at every '>' character
     let elements = string.split('> ');
@@ -348,9 +404,19 @@ function verifyListDisplay() {
     //Starting at the second split element, insert each as a 'li'
     for (let j = 1; j < elements.length; j++) {    
       let li = document.createElement("li");
-      li.classList.add("--Inter-Black");
+      li.classList.add("--Inter-Regular");
       li.classList.add("subtext");
       li.textContent = elements[j].trim();
+      li.style.listStyle = 'none';
+      li.style.paddingLeft = '1rem';
+      li.style.textIndent = '-0.7em';
+
+      if (parasToFormat[i].classList.contains('pros')) {
+        li.insertAdjacentHTML("afterbegin", "👍 "); 
+      }
+      else if (parasToFormat[i].classList.contains('cons')) {
+        li.insertAdjacentHTML("afterbegin", "👎 "); 
+      }
       parasToFormat[i].parentElement.append(li);
     }  
 
@@ -389,6 +455,9 @@ function displayItem(item) {
   if (item.imageURL != "" || item.imageURL != undefined) {
     $('#item-image').replaceWith('<img id="item-image" src="' + item.imageURL + '"alt="">');  
   }
+  else {
+    $('#item-image').replaceWith('<img id="item-image" src="../images/grocery.jpg" alt="">'); 
+  }
 }
 
 function displayCompany(company) {
@@ -400,17 +469,25 @@ function displayCompany(company) {
     $('#container-result-company-name').text(company.name);
     $('#company-profile-sector').text(company.profile.sector);
     $('#company-profile-industry').text(company.profile.industry);
-    $('#company-profile-nb-employees').text("Approximately " + company.profile.employeesNb + " full time employees.");
+    $('#company-profile-nb-employees').text("+/-" + company.profile.employeesNb + " full time employees.");
     $('#company-address-1').text(company.profile.address[0]);
     $('#company-address-2').text(company.profile.address[1]);
     $('#company-address-3').text(company.profile.address[2]);
 
     $('#concerned-financial-year').text(company.financials.fiscalYear + "/TTM");
-    $('#company-gross-revenue').text("Gross Revenue: " + company.financials.grossRevenue);
-    $('#company-gross-profit').text("Gross Profit: " + company.financials.grossProfit);
+    $('#company-gross-revenue').text(company.financials.grossRevenue);
+    $('#company-gross-profit').text(company.financials.grossProfit);
     $('#company-profit-margin span').text(company.financials.profitMargin);
-    $('#company-median-salary').text("Median Annual Salary: $" + company.financials.medianWorkerPayroll);
-    $('#company-salary-ratio span').text(company.financials.payrollRatio);
+
+    if (company.financials.payrollRatio === "") {
+      $('#company-median-salary-title').css('display','none');
+      $('#company-median-salary').css('display','none');
+      $('#company-salary-ratio').css('display','none');
+    }
+    else {
+      $('#company-median-salary').text(company.financials.medianWorkerPayroll);
+      $('#company-salary-ratio').text("The CEO makes " + company.financials.payrollRatio + " times more than the median employee.");
+    }
     
     $('#company-key-executives p.subtext').empty();
     for (let i = 0; i < company.financials.keyExecutives.length; i++) {
@@ -426,7 +503,7 @@ function displayCompany(company) {
         $('#tab-governance-content').append('<div id="tab-governance-content-' + i + '" class="new-resource"><div class="flex"><div class="eighty"><p class="subtext">' + company.govStrategies[i].source + '</p><p>' + company.govStrategies[i].researchName + '</p></div><div class="twenty"><p>' + company.govStrategies[i].assessmentYear + '</p></div></div><div class="flex"><div class="eighty"><p class="--Inter-Black sub-togglable" onclick="subToggle(this)">' + company.govStrategies[i].subject + ' +</p></div><div class="twenty"><p>' + company.govStrategies[i].rating + '</p></div></div></div>');
         for (let j = 0; j < company.govStrategies[i].subBlurbs.length; j++) {
           // const element = company.govStrategies.subBlurbs[j];
-          $('#tab-governance-content-'+i).append('<div id="tab-governance-content-sub-blurb' + j + '" class="hidden sub-blurb"><div class="flex"><div class="eighty"><p class="--Inter-Black sub-details-togglable" onclick="subToggleDetails(this)">' + company.govStrategies[i].subBlurbs[j].area + ' +</p></div><div class="twenty"><p>'+ company.govStrategies[i].subBlurbs[j].rating +'</p></div></div><div class="sub-blurb-details hidden"><p>'+ company.govStrategies[i].subBlurbs[j].description + '</p><div><div><p class"--Inter-Black">Pros:</p><p class="to-format">'+ company.govStrategies[i].subBlurbs[j].pros +'</p></div><div><p class"--Inter-Black">Cons:</p><p class="to-format">'+ company.govStrategies[i].subBlurbs[j].cons +'</p></div></div><p>See: <a class = "to-format-link" href="' + company.govStrategies[i].subBlurbs[j].externalLink +'">' + company.govStrategies[i].subBlurbs[j].externalSource + '</a></p></div></div>');
+          $('#tab-governance-content-'+i).append('<div id="tab-governance-content-sub-blurb' + j + '" class="hidden sub-blurb"><div class="flex"><div class="eighty"><p class="--Inter-Black sub-details-togglable" onclick="subToggleDetails(this)">' + company.govStrategies[i].subBlurbs[j].area + ' +</p></div><div class="twenty"><p>'+ company.govStrategies[i].subBlurbs[j].rating +'</p></div></div><div class="sub-blurb-details hidden"><p>'+ company.govStrategies[i].subBlurbs[j].description + '</p><div><div><p class="--Inter-Black green-title">PROS:</p><p class="to-format pros">'+ company.govStrategies[i].subBlurbs[j].pros +'</p></div><div><p class="--Inter-Black red-title">CONS:</p><p class="to-format cons">'+ company.govStrategies[i].subBlurbs[j].cons +'</p></div></div><p>See: <a class = "to-format-link" href="' + company.govStrategies[i].subBlurbs[j].externalLink +'">' + company.govStrategies[i].subBlurbs[j].externalSource + '</a></p></div></div>');
         }
       }
     }
@@ -441,7 +518,7 @@ function displayCompany(company) {
         $('#tab-workers-content').append('<div id="tab-workers-content-' + i + '" class="new-resource"><div class="flex"><div class="eighty"><p class="subtext">' + company.workersSocialInclusion[i].source + '</p><p>' + company.workersSocialInclusion[i].researchName + '</p></div><div class="twenty"><p>' + company.workersSocialInclusion[i].assessmentYear + '</p></div></div><div class="flex"><div class="eighty"><p class="--Inter-Black sub-togglable" onclick="subToggle(this)">' + company.workersSocialInclusion[i].subject + ' +</p></div><div class="twenty"><p>' + company.workersSocialInclusion[i].rating + '</p></div></div></div>');
         for (let j = 0; j < company.workersSocialInclusion[i].subBlurbs.length; j++) {
           // const element = company.workersSocialInclusion.subBlurbs[j];
-          $('#tab-workers-content-'+i).append('<div id="tab-workers-content-sub-blurb' + j + '" class="hidden sub-blurb"><div class="flex"><div class="eighty"><p class="--Inter-Black sub-details-togglable" onclick="subToggleDetails(this)">' + company.workersSocialInclusion[i].subBlurbs[j].area + ' +</p></div><div class="twenty"><p>'+ company.workersSocialInclusion[i].subBlurbs[j].rating +'</p></div></div><div class="sub-blurb-details hidden"><p>'+ company.workersSocialInclusion[i].subBlurbs[j].description + '</p><div><div><p class"--Inter-Black">Pros:</p><p class="to-format">'+ company.workersSocialInclusion[i].subBlurbs[j].pros +'</p></div><div><p class"--Inter-Black">Cons:</p><p class="to-format">'+ company.workersSocialInclusion[i].subBlurbs[j].cons +'</p></div></div><p>See: <a class = "to-format-link" href="' + company.workersSocialInclusion[i].subBlurbs[j].externalLink +'">' + company.workersSocialInclusion[i].subBlurbs[j].externalSource + '</a></p></div></div>');
+          $('#tab-workers-content-'+i).append('<div id="tab-workers-content-sub-blurb' + j + '" class="hidden sub-blurb"><div class="flex"><div class="eighty"><p class="--Inter-Black sub-details-togglable" onclick="subToggleDetails(this)">' + company.workersSocialInclusion[i].subBlurbs[j].area + ' +</p></div><div class="twenty"><p>'+ company.workersSocialInclusion[i].subBlurbs[j].rating +'</p></div></div><div class="sub-blurb-details hidden"><p>'+ company.workersSocialInclusion[i].subBlurbs[j].description + '</p><div><div><p class="--Inter-Black green-title">PROS:</p><p class="to-format pros">'+ company.workersSocialInclusion[i].subBlurbs[j].pros +'</p></div><div><p class="--Inter-Black red-title">CONS:</p><p class="to-format cons">'+ company.workersSocialInclusion[i].subBlurbs[j].cons +'</p></div></div><p>See: <a class = "to-format-link" href="' + company.workersSocialInclusion[i].subBlurbs[j].externalLink +'">' + company.workersSocialInclusion[i].subBlurbs[j].externalSource + '</a></p></div></div>');
         }
       }
     }
@@ -456,7 +533,7 @@ function displayCompany(company) {
        $('#tab-environment-content').append('<div id="tab-environment-content-' + i + '" class="new-resource"><div class="flex"><div class="eighty"><p class="subtext">' + company.environment[i].source + '</p><p>' + company.environment[i].researchName + '</p></div><div class="twenty"><p>' + company.environment[i].assessmentYear + '</p></div></div><div class="flex"><div class="eighty"><p class="--Inter-Black sub-togglable" onclick="subToggle(this)">' + company.environment[i].subject + ' +</p></div><div class="twenty"><p>' + company.environment[i].rating + '</p></div></div></div>');
        for (let j = 0; j < company.environment[i].subBlurbs.length; j++) {
          // const element = company.environment.subBlurbs[j];
-         $('#tab-environment-content-'+i).append('<div id="tab-environment-content-sub-blurb' + j + '" class="hidden sub-blurb"><div class="flex"><div class="eighty"><p class="--Inter-Black sub-details-togglable" onclick="subToggleDetails(this)">' + company.environment[i].subBlurbs[j].area + ' +</p></div><div class="twenty"><p>'+ company.environment[i].subBlurbs[j].rating +'</p></div></div><div class="sub-blurb-details hidden"><p>'+ company.environment[i].subBlurbs[j].description + '</p><div><div><p class"--Inter-Black">Pros:</p><p class="to-format">'+ company.environment[i].subBlurbs[j].pros +'</p></div><div><p class"--Inter-Black">Cons:</p><p class="to-format">'+ company.environment[i].subBlurbs[j].cons +'</p></div></div><p>See: <a class = "to-format-link" href="' + company.environment[i].subBlurbs[j].externalLink +'">' + company.environment[i].subBlurbs[j].externalSource + '</a></p></div></div>');
+         $('#tab-environment-content-'+i).append('<div id="tab-environment-content-sub-blurb' + j + '" class="hidden sub-blurb"><div class="flex"><div class="eighty"><p class="--Inter-Black sub-details-togglable" onclick="subToggleDetails(this)">' + company.environment[i].subBlurbs[j].area + ' +</p></div><div class="twenty"><p>'+ company.environment[i].subBlurbs[j].rating +'</p></div></div><div class="sub-blurb-details hidden"><p>'+ company.environment[i].subBlurbs[j].description + '</p><div><div><p class="--Inter-Black green-title">PROS:</p><p class="to-format pros">'+ company.environment[i].subBlurbs[j].pros +'</p></div><div><p class="--Inter-Black red-title">CONS:</p><p class="to-format cons">'+ company.environment[i].subBlurbs[j].cons +'</p></div></div><p>See: <a class = "to-format-link" href="' + company.environment[i].subBlurbs[j].externalLink +'">' + company.environment[i].subBlurbs[j].externalSource + '</a></p></div></div>');
        }
      }
    }
@@ -471,7 +548,7 @@ function displayCompany(company) {
        $('#tab-nutrition-content').append('<div id="tab-nutrition-content-' + i + '" class="new-resource"><div class="flex"><div class="eighty"><p class="subtext">' + company.nutrition[i].source + '</p><p>' + company.nutrition[i].researchName + '</p></div><div class="twenty"><p>' + company.nutrition[i].assessmentYear + '</p></div></div><div class="flex"><div class="eighty"><p class="--Inter-Black sub-togglable" onclick="subToggle(this)">' + company.nutrition[i].subject + ' +</p></div><div class="twenty"><p>' + company.nutrition[i].rating + '</p></div></div></div>');
        for (let j = 0; j < company.nutrition[i].subBlurbs.length; j++) {
          // const element = company.nutrition.subBlurbs[j];
-         $('#tab-nutrition-content-'+i).append('<div id="tab-nutrition-content-sub-blurb' + j + '" class="hidden sub-blurb"><div class="flex"><div class="eighty"><p class="--Inter-Black sub-details-togglable" onclick="subToggleDetails(this)">' + company.nutrition[i].subBlurbs[j].area + ' +</p></div><div class="twenty"><p>'+ company.nutrition[i].subBlurbs[j].rating +'</p></div></div><div class="sub-blurb-details hidden"><p>'+ company.nutrition[i].subBlurbs[j].description + '</p><div><div><p class"--Inter-Black">Pros:</p><p class="to-format">'+ company.nutrition[i].subBlurbs[j].pros +'</p></div><div><p class"--Inter-Black">Cons:</p><p class="to-format">'+ company.nutrition[i].subBlurbs[j].cons +'</p></div></div><p>See: <a class = "to-format-link" href="' + company.nutrition[i].subBlurbs[j].externalLink +'">' + company.nutrition[i].subBlurbs[j].externalSource + '</a></p></div></div>');
+         $('#tab-nutrition-content-'+i).append('<div id="tab-nutrition-content-sub-blurb' + j + '" class="hidden sub-blurb"><div class="flex"><div class="eighty"><p class="--Inter-Black sub-details-togglable" onclick="subToggleDetails(this)">' + company.nutrition[i].subBlurbs[j].area + ' +</p></div><div class="twenty"><p>'+ company.nutrition[i].subBlurbs[j].rating +'</p></div></div><div class="sub-blurb-details hidden"><p>'+ company.nutrition[i].subBlurbs[j].description + '</p><div><div><p class"--Inter-Black green-title">PROS:</p><p class="to-format pros">'+ company.nutrition[i].subBlurbs[j].pros +'</p></div><div><p class="--Inter-Black red-title">CONS:</p><p class="to-format cons">'+ company.nutrition[i].subBlurbs[j].cons +'</p></div></div><p>See: <a class = "to-format-link" href="' + company.nutrition[i].subBlurbs[j].externalLink +'">' + company.nutrition[i].subBlurbs[j].externalSource + '</a></p></div></div>');
        }
      }
    }
@@ -483,7 +560,7 @@ function displayCompany(company) {
 
 
 
-  // //POST NOTE this is specific for airbnb data set - you change according to your wishes!
+  // //POST NOTE
   // document.querySelector("#sendData").addEventListener('click', 
   //   function(event){
   //     event.preventDefault();

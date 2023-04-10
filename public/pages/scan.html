@@ -15,18 +15,466 @@
   <script>eruda.init();</script>
 </head>
 <body>
-  <div class="home">
-    <div id="status">Initializing...</div>
-    <button id="startButton">Start Scan</button>
-    Detect an Image: <input id="fileInput" type="file"/>
-    <img id="selectedImg"/>
+  <div id="loading-screen" class="hidden"></div>
+  <div>
+    <div id="header" class="flex">
+      <div class="left-flex">
+        <div id="line-header"></div>
+        <a href="../client.html"><div id="header-logo">
+          <div></div>
+        </div></a>
+      </div>
+        <div id="header-static-menu" class="right-flex z-front">
+            <a href="./pages/account.html"><div id="header-static-menu-account" class="box-center"><h1 class="--Neue-Mentana-Regular">Account</h1></div></a>
+            <a href="./pages/history.html"><div id="header-static-menu-about" class="box-center"><h1 class="--Neue-Mentana-Regular">About</h1></div></a>
+        </div>
+    </div>
+    <div class="scanner" style="display:none;">
+      <select id="cameraSelect"></select>
+      <button id="closeButton">Close</button>
+      <div>
+        <svg class="overlay fullscreen"></svg>
+        <video class="camera fullscreen" muted autoplay="autoplay" playsinline="playsinline" webkit-playsinline></video>
+      </div>
+    </div>
+    <div class="home">  
+        <div id="container-search" class="active">
+          <div><h1 class="--Neue-Mentana-Regular">SCAN</h1></div>
+          <div id="error-spot"></div>
+          <div id="container-inner-part-top" class="sub-container">
+              <h2 class="--Inter-Black">START SCAN</h2>
+              <p class="--Inter-Regular">Scan the EAN code of the product with your camera.</p>
+              <input type="button" value="Open Camera" id="startButton" class="--Inter-Regular"/>
+          </div>
+          <div id="container-inner-part-bottom" class="sub-container">
+              <h2 class="--Inter-Black">IMPORT PICTURE</h2>
+              <p class="--Inter-Regular">Scan the EAN code from a picture.</p>
+              <input id="fileInput" type="file"/>
+              <img id="selectedImg"/>
+          </div>
+        </div>
+        <div id="container-result" class="active hidden">
+          <div id="container-result-item">
+            <div id ="container-result-item-review" class="flex">
+              <div id="container-result-item-thumbnail">
+                <img id="item-image" src="../images/grocery.jpg" alt="">
+              </div>
+              <div id="container-result-item-description">
+                <h2 class="--Inter-Black">SCANNED</h2>
+                <p class="--Inter-Regular" id="product-name">No product found</p>
+                <p class="--Inter-Regular" id="product-brand">No brand found</p>
+                <p class="--Inter-Regular" id="product-company">No company found</p>
+              </div>
+            </div>
+            <div id="container-result-item-decision" class="flex">
+              <div id="container-result-item-decision-buy"><h2 class="--Inter-Black">BUY</h2></div>
+              <div id="container-result-item-decision-pass"><h2 class="--Inter-Black">PASS</h2></div>
+            </div>
+            <div id="container-result-redo" onclick="handleRedo()">
+              <h2 class="--Inter-Black">NEW SEARCH</p>
+            </div>
+          </div>
+          <div id="container-result-company">
+            <h1 id="container-result-company-name" class="--Neue-Mentana-Bold">No company found</h1>
+            <div class="flex sub-sec">
+              <div class="seventy subtext">
+                <p><span class="subtext"></span><span id="company-profile-sector"></span></p>
+                <p><span class="subtext"></span><span id="company-profile-industry"></span></p>
+                <p id="company-profile-nb-employees">Number of full-time employees:</p>
+              </div>
+              <div class="thirty">
+                <p id="company-address-1" class="subtext">Adress Line 1</p>
+                <p id="comoany-address-2" class="subtext">-</p>
+                <p id="company-address-3">Adress Line 3</p>
+              </div>
+            </div>
+            <div id="company-financial-section" class="tab">
+              <div class="flex">
+                <div class="eighty"><h2>FINANCIAL PROFILE</h2></div>
+                <div class="twenty"><p id="concerned-financial-year">2022/TTM</p></div>
+              </div>
+              <div class="flex">
+                <div class="seventy">
+                  <br>
+                  <p class="subtext">Gross Revenue:</p>
+                  <p id="company-gross-revenue" class="--Neue-Mentana-Regular moderate"></p>
+                  <br>
+                  <p class="subtext">Gross Profit:</p>
+                  <p id="company-gross-profit" class="--Neue-Mentana-Regular moderate"></p>
+                </div>
+                <div class="thirty">
+                  <br>
+                  <p class="subtext">Profit margin: </p>
+                  <p id="company-profit-margin" class="--Neue-Mentana-Bold moderate"><span></span></p>
+                </div>
+              </div>
+              <div class="sub-sec">
+                  <p id="company-median-salary-title">Median Salary:</p>
+                  <p id="company-median-salary" class="--Neue-Mentana-Regular moderate"></p>
+                  <br>
+                  <p id="company-salary-ratio"></p>
+              </div>
+              <div id="company-key-executives" class="sub-sec subtext">
+                <p class="--Inter-Black">Key Executives, annual salary</p>
+              </div>
+            </div>
+            <!-- GOVERNANCE TAB -->
+            <div id="tab-governance" class="tab">
+              <h2 class="togglable">GOVERNANCE AND MANAGEMENT +</h2>
+              <div id="tab-governance-content" class="hidden">
+                <div class="new-resource" id="element-id-1">
+                  <div class="flex">
+                    <div class="eighty">
+                      <p class="subtext">Assessment from the Organization bla bla bla</p>
+                      <p>Name of the study</p>
+                    </div>
+                    <div class="twenty"><p>2021</p></div>
+                  </div>
+                  <div class="flex">
+                    <div class="eighty"><p class="--Inter-Black sub-togglable" onclick="subToggle(this)">Title of the Criteria Studied +</p></div>
+                    <div class="twenty">
+                      <p>score</p>
+                    </div>
+                  </div>
+                  <div id="element-sub-id-1" class="sub-blurb hidden">
+                    <div class="flex">
+                      <div class="eighty"><p class="--Inter-Black sub-details-togglable" onclick="subToggleDetails(this)">Sub Criteria +</p></div>
+                      <div class="twenty"><p>Score</p></div>
+                    </div>
+                    <div class="sub-blurb-details hidden">
+                      <p>Description if there is one</p>
+                      <div>
+                        <div>
+                          <p>Pros:</p>
+                          <p class="to-format">The company: > Publicly states that workers shall not be required to work more than 48 hours in a regular work week or 60 hours including overtime. AND> States that all overtime work must be consensual and be paid at a premium rate. AND> Has a publicly available statement of policy that expects its business relationships to commit to respecting the health and safety of their workers. AND
+                            > Has a public expectation that its business relationships shall not require workers to work more than 48 hours in a regular work week or 60 hours including overtime.</p>
+                        </div>
+                        <div>
+                          <p>Cons:</p>
+                          <p>The company: > Publicly states that workers shall not be required to work more than 48 hours in a regular work week or 60 hours including overtime. AND> States that all overtime work must be consensual and be paid at a premium rate. </p>
+                        </div>
+                      </div>
+                      <p>See: <a class="to-format-link" href="undefined">undefined</a></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- WORKERS TAB -->
+            <div id="tab-workers" class="tab">
+              <h2 class="togglable">WORKERS AND SOCIAL +</h2>
+              <div id="tab-workers-content" class="hidden"></div>
+            </div>
+
+            <!-- ENVIRONMENT TAB -->
+            <div id="tab-environment" class="tab">
+              <h2 class="togglable">ENVIRONMENT +</h2>
+              <div id="tab-environment-content" class="hidden"></div>
+            </div>
+
+            <!-- WORKERS TAB -->
+            <div id="tab-nutrition" class="tab">
+              <h2 class="togglable">NUTRITION +</h2>
+              <div id="tab-nutrition-content" class="hidden"></div>
+            </div>
+          </div>
+        </div>
   </div>
-  <div class="scanner" style="display:none;">
-    <select id="cameraSelect"></select>
-    <button id="closeButton">Close</button>
-    <svg class="overlay fullscreen"></svg>
-    <video class="camera fullscreen" muted autoplay="autoplay" playsinline="playsinline" webkit-playsinline></video>
-  </div>
+  <style>
+
+    .active {
+      display: block;
+      color: var(--white);
+    }
+
+    .hidden {
+      display:none;
+    }
+
+    p {
+      /* font-size: 12px; */
+      font-family: Inter;
+      font-weight: normal;
+      margin: 0;
+    }
+    
+    h2 {
+      font-family: Inter;
+      font-weight: bold;
+      margin: 0;
+    }
+
+    p.subtext, span.subtext {
+      font-size: 12px;
+    }
+
+    li {
+      font-size: 14px;
+      padding-bottom: 10px;
+      font-weight: regular;
+    }
+
+    /* .scanner {
+      position: absolute;
+      margin: 0;
+      padding: 0;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 100vw;
+    } */
+
+    .fullscreen {
+      width:100%;
+      height:100%;
+      position:absolute;
+      left:0;
+      top:0;
+    }
+
+    input[type=button]{
+      background-color: var(--yellow);
+      color: var(--black);
+    }
+
+    /* input[type=file] {
+      display: none;
+    } */
+
+    #closeButton {
+      position: absolute;
+    }
+
+    #container-search, .scanner {
+      height: 83vh;
+      padding: 10% 5% 5% 5%;
+      background: 
+        radial-gradient(ellipse at 0% 0%, var(--black) 18.06%, rgba(255,255,255,0) 81.25%) 0px 0px / 100% 100% no-repeat no-repeat,
+        radial-gradient(ellipse at 100% 0%, var(--yellow) 0%, var(--yellow) 80.56%) 0px 0px / 100% 100% no-repeat no-repeat;
+    }
+
+    h1 {
+      font-size: 36px;
+    }
+
+    .sub-container {
+      height: 30%;
+      padding: 16px 5% 0 0;
+    }
+
+    .sub-sec, .tab{
+      margin-top: 10%;
+      margin-left: -5%;
+      padding-top: 2%;
+      padding-left: 5%;
+      padding-right: 10%;
+      width: 100%;
+    }
+
+    .tab {
+       background: 
+        radial-gradient(ellipse at 0% 0%, var(--white) 18.06%, rgba(255,255,255,0) 81.25%) 0px 0px / 100% 100% no-repeat no-repeat;
+    }
+
+    .seventy {
+      width: 70%;
+    }
+
+    .eighty {
+      width: 80%;
+    }
+
+    .thirty {
+      width: 30%;
+      /* padding-left: 100px; */
+      text-align: right;
+    }
+
+    .twenty {
+      width: 20%;
+      text-align: right;
+    }
+
+    .new-resource {
+      padding-top: 3%;;
+    }
+
+    .sub-blurb {
+      padding-top: 2%;
+      padding-left: 5%;
+    }
+
+    .sub-blurb-details div{
+      padding-top: 2%;
+      padding-bottom: 2%;
+    }
+
+    #container-inner-part-top {
+      margin-top: 24px;
+      background: 
+      /* linear-gradient(180deg, rgba(255,255,255,0), var(--black)), */
+      radial-gradient(ellipse at 75% 0%, var(--black) 1.06%, rgba(255,255,255,0) 75%) 0px 0px / 100% 100% no-repeat no-repeat;
+    }
+
+    #container-inner-part-bottom {
+      background: 
+      /* linear-gradient(180deg, rgba(255,255,255,0), var(--black)), */
+      radial-gradient(ellipse at 75% 0%, var(--black) 1.06%, rgba(255,255,255,0) 75%) 0px 0px / 100% 100% no-repeat no-repeat;
+    }
+    
+    #container-result {
+        height: 100%;
+        /* background: 
+          radial-gradient(ellipse at 0% 0%, var(--beige) 18.06%, rgba(255,255,255,0) 81.25%) 0px 0px / 100% 100% no-repeat no-repeat,
+          radial-gradient(ellipse at 100% 0%, var(--yellow) 0%, var(--green) 80.56%) 0px 0px / 100% 100% no-repeat no-repeat; */
+        background-color: var(--white);
+      }
+
+      #container-result-item {
+        background-color: var(--black);
+        height: 30vh;
+        flex-wrap: wrap;
+        /* position: relative; */
+      }
+
+      #container-result-item-review div {
+        height: 17vh;
+        /* background-color: aqua; */
+        
+      }
+
+      #container-result-item-thumbnail {
+        display: flex;
+        width: 40%;
+        justify-content: center;
+        align-items: center;
+        /* padding: 2%; */
+      }
+
+      #container-result-item-thumbnail img {
+        width: 80%;
+        height: auto;
+      }
+
+      #container-result-item-description {
+        width: 60%;
+        color: var(--white);
+        /* margin-left: 10px; */
+      }
+
+      #container-result-item-description h2 {
+        margin: 10% 0 0 7%;
+        margin-bottom: 0;
+      }
+
+      #container-result-item-description p {
+        margin: 7px 0 5px 7%;
+      }
+
+      #container-result-item-decision {
+        height: 8vh;
+        width: 100%;
+        /* background-color: antiquewhite; */
+      }
+
+      #container-result-item-decision div {
+        display: flex;
+        justify-content: center;
+        width: 50%;
+        /* padding: 0 10%; */
+      }
+
+      #container-result-item-decision-buy h2, #container-result-item-decision-pass h2 {
+        /* margin: 12.5% 40%; */
+        margin: 0;
+        padding-top: 3vh;
+      }
+
+      #container-result-item-decision-buy {
+        -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+        -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+        box-sizing: border-box;         /* Opera/IE 8+ */
+        /* position: relative; */
+        /* display: flex; */
+        margin: 0;
+        border-bottom: 8vh solid var(--green);
+        border-left: 0 solid transparent;
+        border-right: 15vw solid transparent;
+        height: 0;
+        width: 50vw;
+        padding-left: 7vw;
+        color: var(--black);
+        /* justify-content: center; */
+        /* align-items: center; */
+      }
+
+      #container-result-item-decision-pass {
+        -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+        -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+        box-sizing: border-box;         /* Opera/IE 8+ */
+        /* position: relative; */
+        margin: 0;
+        border-bottom: 8vh solid var(--red);
+        border-left: 15vw solid transparent;
+        border-right: 0 solid transparent;
+        height: 0;
+        width: 50vw;
+        padding-right: 7vw;
+        color: var(--black);
+        /* justify-content: center; */
+      }
+
+      #container-result-redo {
+        height: 20%;
+        display: flex;
+        /* align-content: center; */
+        align-items: center;
+        /* padding-top: 7%; */
+        justify-content: center;
+        background-color: var(--yellow);
+        color: var(--black);
+        border-top: solid 1px var(--black);
+        border-bottom: solid 2px var(--black);
+        cursor: pointer;
+      }
+
+      #container-result-company {
+        padding: 10% 5% 5% 5%;
+        line-height: 1.7;
+        color: var(--black);
+      }
+
+      #container-result-company-name {
+        /* color: var(--yellow); */
+      }
+
+      #company-financial-section {
+        /* background-color: var(--grey); */
+        padding-top: 10%;
+        padding-bottom: 10%;
+        border-top: solid var(--black);
+        border-bottom: solid var(--black);
+      }
+
+      #company-profit-margin {
+       /* padding-right: 40px; */
+       margin-left: -40px;
+      }
+
+      .moderate {
+        font-size: 24px;
+      }
+
+      /* #company-key-executives p {
+        padding-right: 20%;
+      } */
+
+
+
+
+    </style>
+
   <!-- <script src="../js/client.js"></script> -->
 </body>
 </html>

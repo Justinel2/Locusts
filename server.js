@@ -17,6 +17,7 @@ app.use("/searchManualKeyword",handleGetProfileByKeyword);
 //Node Modules
 // var http = require('follow-redirects').http;
 const request = require('request');
+const https = require('https');
 const Wikiapi = require('wikiapi');
 
 //Classes
@@ -38,6 +39,7 @@ const FAABLegendModel = require("./schemas/FAABLegendsSchema.js");
 const { resolve } = require("path");
 const { rejects } = require("assert");
 const e = require("express");
+const { abort } = require("process");
 
 //OBJECTS
 let newSearchedItem = new Item();
@@ -47,9 +49,12 @@ let dbOpened = false;
 let foundBrandFromUPC;
 let companyKeyword;
 let manufacturer;
+let parent;
 let foundCoFromBrand;
 let manufacturerAvailable;
+let parentAvailable;
 let abortMission;
+let statusInfo;
 
 
 //---- Connection to db
@@ -111,7 +116,8 @@ async function handleGetProfileByKeyword (request,response,next){
   let scannedResults = [
     this.status = abortMission,
     this.item = newSearchedItem,
-    this.company = newSearchedCompany
+    this.company = newSearchedCompany,
+    this.statusInfo = "Sorry, couldn't find anything. Try again."
   ]
 
   //Send results to the client
@@ -135,6 +141,10 @@ async function handleGetProfileByUPC (request,response,next){
   //Get product name, image and brand from UPC Code
   let itemArgs = await getUPCPage(request.query.UPCsubmitted);
 
+  // if (!foundBrandFromUPC) {
+  //   itemArgs = await getSecondUPCPage(request.query.UPCsubmitted);
+  // }
+
   //If we could find information with the UPC
   if (foundBrandFromUPC) {
     // console.log(itemArgs[0] + ", " + itemArgs[1] + ", " + itemArgs[2] + ", ")
@@ -154,10 +164,18 @@ async function handleGetProfileByUPC (request,response,next){
       this.item = newSearchedItem,
       this.company = newSearchedCompany
     ]
+          //Send results to the client
+          response.send(scannedResults);
   
-    //Send results to the client
-    response.send(scannedResults);
-  
+  }
+  else {
+    let scannedResults = [
+      this.status = abortMission,
+      this.statusInfo = statusInfo
+    ]
+
+          //Send results to the client
+          response.send(scannedResults);
   }
 }
 
@@ -188,12 +206,20 @@ function getUPCPage (upc) {
         //in that case, it is the user that has to enter a valid UPC (it is not because they do not have this one in the db)
         if(entry.code === "INVALID_UPC") {
           let errorMessage = entry.message;
-          console.log("The UPC entered is invalid. Please try again.")
-          reject(errorMessage);
+          abortMission = true;
+          statusInfo = "The UPC entered is invalid. Please try again."
+          console.log(statusInfo);
+          // reject(errorMessage);
+          // let itemArgs = [undefined, undefined, undefined];
+          resolve();
         }
         //If the UPC is valid no information is returned from UPCitemDB
         else if (entry.items[0] === undefined) {
-          reject("This UPC is not yet in the database.")
+          abortMission = true;
+          statusInfo = "This UPC is not yet in the database. Try searching the brand.";
+          // reject("This UPC is not yet in the database.")
+          // let itemArgs = [undefined, undefined, undefined];
+          resolve();
         }
         //If the API returns information about this UPC
         else {
@@ -217,6 +243,41 @@ function getUPCPage (upc) {
 }
 
 //-------------------------------------------------------------------------------------------------------------------------------------
+//GET INFORMATION ABOUT ITEM FROM UPC
+//Called from the function handleGetProfilebyUPC
+//Request to UpCiteUPC API 
+//If data is found in their database for this UPC, we can obtain the:
+//Item name, brand and image link
+//
+function getSecondUPCPage (upc) { 
+  //Promise with a timeout 
+  return new Promise((resolve,reject)=> {
+    setTimeout(()=>{
+      console.log("TO CHECK: " + upc);
+      var opts = {
+        hostname: 'buycott.com',
+        path: '/api/v4/products/lookup',
+        method: 'GET',
+        headers: {
+          "Content-Type": "application/json",
+        }
+      };
+      var req = https.request(opts, function(response) {
+        response.on('data', function(data) {
+          console.log('Content: ' + data);
+        });
+      });
+      req.on('error', function(e) {
+        console.log('Error: ' + e.message);
+      });
+      req.write('{ "barcode": "0060410054406", "access_token": "k8km__uZgPjjxE73nETeHqHWRP2kDPuxtcgEjt7n" }');
+      req.end();
+    },2000);
+  }) 
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------------------------
 //GET INFORMATION ABOUT THE MOTHER COMPANY FROM THE BRAND (OR ANOTHER KEYWORD)
 //Called by both the handleGetProfileByUPC and the handleGetProfileByKeyword when they have the same information
 //Async function that orchestrate the rest of the requests to API and retrieve in my database
@@ -237,6 +298,7 @@ async function handleGetProfile(co) {
   console.log("data is in main loop: " + companyKeyword);
   console.log("foundCoFromBrand= " + foundCoFromBrand);
   console.log("manufacturerAvailable= " + manufacturerAvailable);
+  console.log("parentAvailable= " + parentAvailable);
   
   //If there was successful result from the brand, plug it in our
   if (foundCoFromBrand) {
@@ -254,7 +316,15 @@ async function handleGetProfile(co) {
       newSearchedItem.motherCo = companyKeyword;
       newSearchedCompany.name = newSearchedItem.motherCo;
     }
-    //If there was no result from the manufacturer -> research stops here
+  }
+  //If there is no result from the brand and manufacturer, try from the parent if it is available
+  else if (!foundCoFromBrand && parentAvailable) {
+    console.log("try to search with parent");
+    if (companyKeyword != undefined) {
+      newSearchedItem.motherCo = companyKeyword;
+      newSearchedCompany.name = newSearchedItem.motherCo;
+    }
+    //If there was no result from the manufacturer and parent -> research stops here
     else if (companyKeyword === "undefined"){
       console.log("NO LUCK HERE");
       abortMission = true;
@@ -300,6 +370,7 @@ function getMotherCompany (q) {
     setTimeout(async ()=>{
       //Replace any spaces from the query string to underscores to fit the wiki format for pages
       let qFormatted = q.replace(' ', '_');
+      // let qFormatted = q.replace('&', '');
       //
       const wiki = new Wikiapi('en');
       const page_data = await wiki.page(qFormatted);
@@ -346,9 +417,18 @@ function getMotherCompany (q) {
             result = infobox.manufacturer.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
             console.log("manufacturer: " + result);
           }
+          else if (infobox.parent != undefined){
+            console.log("no owner or manufacturer available, but a parent is listed")
+            //Indicate that a manufacturer has been found
+            parentAvailable = true;
+            //Plug the value without the brackets as a result
+            result = infobox.parent.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
+            console.log("parent: " + result);
+          }
           //++++++++++++++
           else {
-            `reject("No way to find out");`
+            result = q;
+            // `reject("No way to find out");`
           }
         }
         else {
@@ -514,11 +594,13 @@ function getYHFinanceFinancials (symb) {
     return new Promise((resolve,reject)=> {
       //Find the company entry withthe market symbol
       MedianWagesModel.find({Ticker:symb}).then((result)=> {
+        if (result[0] != undefined){
+          //PLUG IN THE MEDIAN PAY, THE RATIO AND THE FISCAL YEAR IN THE COMPANY OBJECT
+          newSearchedCompany.financials.medianWorkerPayroll = result[0].Median_Worker_Pay;
+          newSearchedCompany.financials.payrollRatio = result[0].Pay_Ratio;
+          newSearchedCompany.financials.fiscalYear = result[0].Fiscal_Year;
+        }
         // console.log(result[0].Median_Worker_Pay);
-        //PLUG IN THE MEDIAN PAY, THE RATIO AND THE FISCAL YEAR IN THE COMPANY OBJECT
-        newSearchedCompany.financials.medianWorkerPayroll = result[0].Median_Worker_Pay;
-        newSearchedCompany.financials.payrollRatio = result[0].Pay_Ratio;
-        newSearchedCompany.financials.fiscalYear = result[0].Fiscal_Year;
         //Resolve an empty response (void)
         resolve();
       });
@@ -551,11 +633,15 @@ function getYHFinanceFinancials (symb) {
           // console.log(result);
 
           if (result != undefined) {
-            console.log("retrieving company habits information from the databases")
+            console.log("retrieving company habits information from the databases");
             //Create main blurb objects by subject
+            newSearchedCompany.govStrategies = [];
             newSearchedCompany.govStrategies.push(new Blurb("MA1", await getLegend('MA1', "n"), result[0].MA1 + "/10", year, source, researchName, nextAssessment, ""));
+            newSearchedCompany.workersSocialInclusion = [];
             newSearchedCompany.workersSocialInclusion.push(new Blurb("MA4", await getLegend('MA4', "n"), result[0].MA4 + "/30", year, source, researchName, nextAssessment, ""));
+            newSearchedCompany.environment = [];
             newSearchedCompany.environment.push(new Blurb("MA2", await getLegend('MA2', "n"), result[0].MA2 + "/30", year, source, researchName, nextAssessment, ""));
+            newSearchedCompany.nutrition = [];
             newSearchedCompany.nutrition.push(new Blurb("MA3", await getLegend('MA3', "n"), result[0].MA3 + "/30", year, source, researchName, nextAssessment, ""));
 
             //Check for upstream and downstream qualities of the company

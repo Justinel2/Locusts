@@ -27,7 +27,7 @@
   h3 {
     margin: 0;
     font-size: 16px;
-    color: var(--beige);
+    color: var(--white);
     filter: blur(5px);
   }
 
@@ -40,9 +40,11 @@
   }
 
   input[type=text] {
-    background-color: var(--yellow);
-    border-style:solid;
-    border:1px solid var(--yellow);
+    background-color: var(--grey);
+    border-style: none;
+    /* border:1px solid var(--yellow); */
+    margin-top: 20px;
+    margin-bottom: 10px;
     margin-left: -1.5%;
     width: 100%;
     height: 25px;
@@ -50,22 +52,23 @@
     padding-left: 10px;
   }
 
-  input[type=button] {
+  input[type=button], input[type=file], button{
     background-color: var(--black);
     border-style:solid;
     border:2px solid var(--black);
     margin-top: 10px;
     margin-left: -1.5%;
-    color: var(--yellow);
+    color: var(--white);
     /* width: 105%; */
     height: 25px;
     border-radius: 10px;
     padding: 0 10px 0 10px;
+
   }
 
   input:focus {
-    background-color: var(--green);
-    border:2px solid var(--black);
+    background-color: var(--yellow);
+    /* border:2px solid var(--black); */
   }
   
   .z-front {
@@ -78,7 +81,7 @@
   }
 
   .left-flex {
-      width: 55%;
+      width: 55vw;
   }
 
   .right-flex {
@@ -95,9 +98,50 @@
     padding-left: 0;
   }
 
+  .green-title {
+    color: var(--green);
+  }
+
+  .red-title {
+    color: var(--red);
+  }
   /* .box-center h1{
     margin-left: 5%;
   } */
+
+  #loading-screen {
+    /* display: none; */
+    position: absolute;
+    z-index: 1000;
+    height: 100vh;
+    width: 100vw;
+    /* background-color: var(--white); */
+    background-image: linear-gradient(135deg, var(--white), rgba(255, 255, 255, 0));
+    background-color: var(--grey);
+    padding: 10%;
+    overflow: hidden;
+  }
+
+  #loading-screen-item {
+    padding-top: 10px;
+    font-size: 30px;
+  } 
+
+  #loading-screen p:first-of-type {
+    margin-top: 20%;
+    font-size: 50px;
+  } 
+
+  #loading-screen-gif {
+    width: 80%;
+    height: 60%;
+    /* margin-top: 20%; */
+    background-image: url("../images/Checkout_Loading.gif");
+    /* background-color: var(--white); */
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
 
  #line-header{
     position: absolute;
@@ -121,13 +165,27 @@
 
   #header-logo {
     height: 100%;
-    background-image: linear-gradient(45deg, var(--beige), var(--black));
+    background-image: linear-gradient(45deg, var(--white), var(--black));
     display: flex;
     justify-content: center;
+    padding: 5%;
+  }
+
+  #header-logo div {
+    height: 85%;
+    width: 85%;
+    background-image: url("../images/Checkout_Logo.png");
+    /* background-color: var(--grey); */
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
   }
 
   #header-logo img {
-    width: 80%;
+    margin-top: 5%;
+    position: absolute;
+    height: 100px;
+    width: auto;
   }
 
   #header-static-menu a div {
@@ -147,11 +205,14 @@
   }
 
   #header-static-menu-account h1{
-    color: var(--beige);
+    color: var(--white);
   }
 
-  #header-static-menu-history {
-    background-image: linear-gradient(135deg, var(--green), var(--beige), var(--beige));
+  #header-static-menu-about {
+    /* background-image: linear-gradient(135deg, var(--green), var(--white), var(--white)); */
+    background-image: linear-gradient(135deg, var(--black), rgba(255, 255, 255, 0));
+    background-color: var(--yellow);
+    color: var(--white);
   }
 
   #content-menu {
@@ -160,20 +221,26 @@
 
   #content-menu-left {
     height: 100%;
+    width: 55vw;
     background:
-    radial-gradient(ellipse at 0% 0%, var(--beige) 18.06%, rgba(255,255,255,0) 81.25%) 0px 0px / 100% 100% no-repeat no-repeat,
+    radial-gradient(ellipse at 0% 0%, var(--white) 18.06%, rgba(255,255,255,0) 81.25%) 0px 0px / 100% 100% no-repeat no-repeat,
     radial-gradient(ellipse at 100% 0%, var(--yellow) 0%, var(--green) 80.56%) 0px 0px / 100% 100% no-repeat no-repeat;  
   }
 
-  #content-menu-left-about {
+  #content-menu-left-search {
     background:
-    linear-gradient(180deg, rgba(255,255,255,0), var(--black)),
-    radial-gradient(ellipse at 25% 0%, var(--beige) 1.06%, rgba(255,255,255,0) 50.25%) 0px 0px / 100% 100% no-repeat no-repeat;
+    linear-gradient(0deg, rgba(4,5,7,0.7) 0%, rgba(242,242,242,0) 100%);
   }
 
-  #content-menu-left-about div {
+  #content-menu-left-history {
+    background:
+    linear-gradient(180deg, rgba(255,255,255,0), var(--black)),
+    radial-gradient(ellipse at 25% 0%, var(--white) 1.06%, rgba(255,255,255,0) 50.25%) 0px 0px / 100% 100% no-repeat no-repeat;
+  }
+
+  #content-menu-left-history div {
     margin-top: 110%;
-    color: var(--beige);
+    color: var(--white);
   }
 
   #content-menu-left div {
@@ -186,17 +253,24 @@
   #content-menu-right {
     /* position: relative; */
     background:
-    radial-gradient(ellipse at 100% 0%, var(--beige) 0%, var(--red) 90.56%) 0px 0px / 100% 100% no-repeat no-repeat; 
+    radial-gradient(ellipse at 100% 0%, var(--grey) 0%, var(--black) 90.56%) 0px 0px / 100% 100% no-repeat no-repeat; 
     flex-direction: column;
-    display: flex;
-    /* justify-content: center; */
+    width: 45vw;
+    height: 100%;
+    /* display: flex; */
   }
+
+  #content-menu-right div {
+    margin-top: -10%;
+    height: 100%;
+  } 
 
   svg {
     text-align: center;
     display: flex;
     justify-content: center;
     stroke: var(--green);
+    overflow-y:visible;
   }
 
   text {
@@ -275,8 +349,8 @@
       /* filter: blur(0px); */
     }
     to {
-      fill: var(--red);
-      fill-opacity: 1;
+      fill: var(--green);
+      fill-opacity: 0.7;
       /* filter: blur(2px); */
     }
   }
