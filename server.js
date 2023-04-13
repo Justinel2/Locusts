@@ -370,6 +370,7 @@ function getMotherCompany (q) {
     setTimeout(async ()=>{
       //Replace any spaces from the query string to underscores to fit the wiki format for pages
       let qFormatted = q.replace(' ', '_');
+      qFormatted = q.replace('Frito Lays', 'Frito-Lay')
       // let qFormatted = q.replace('&', '');
       //
       const wiki = new Wikiapi('en');
@@ -399,9 +400,17 @@ function getMotherCompany (q) {
         // console.log(infobox);
         // If the key 'currentowner' is not defined in this infobox
         if(infobox.currentowner === undefined) {
-          console.log("no current owner parameter")
+          console.log(infobox.currentowner);
+          if (infobox.parent != undefined){
+            console.log("no owner or manufacturer available, but a parent is listed: " + infobox.parent)
+            //Indicate that a manufacturer has been found
+            parentAvailable = true;
+            //Plug the value without the brackets as a result
+            result = infobox.parent.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
+            console.log("parent: " + result);
+          }
           //But there is a key 'owner' defined
-          if (infobox.owner != undefined) {
+          else if (infobox.owner != undefined) {
             //Indicate that the mother company has been found
             foundCoFromBrand = true;
             console.log("owner found under another syntax")
@@ -416,14 +425,6 @@ function getMotherCompany (q) {
             //Plug the value without the brackets as a result
             result = infobox.manufacturer.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
             console.log("manufacturer: " + result);
-          }
-          else if (infobox.parent != undefined){
-            console.log("no owner or manufacturer available, but a parent is listed")
-            //Indicate that a manufacturer has been found
-            parentAvailable = true;
-            //Plug the value without the brackets as a result
-            result = infobox.parent.match(new RegExp("\\[.*?\\]","g"),"")[0].replace(/\[|\]/g,'');
-            console.log("parent: " + result);
           }
           //++++++++++++++
           else {

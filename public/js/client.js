@@ -180,7 +180,7 @@ window.onload = function () {
       if (barcodes.length != 0) {
         let UPCcode = barcodes;
         stop();
-        displayLoading(UPCcode[0]);
+        displayLoading(UPCcode[0].rawValue);
         scannerContainer.style.display = "none";
         home.style.display = "";
         // let detectedCode = UPCcode[0].rawValue;
@@ -221,6 +221,8 @@ window.onload = function () {
             }
             else {
               console.log("we have a response");
+              removeSearchPage();
+              displayResponse();
               displayItem(response[1]);
               displayCompany(response[2]);
             }
